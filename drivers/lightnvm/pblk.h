@@ -573,6 +573,27 @@ struct pblk_addrf {
 	int sec_ws_stripe;
 };
 
+struct pblk_trans_cache {
+	atomic64_t usage;
+	unsigned char *trans_map; /* lba-ppa memory cache */
+};
+
+struct pblk_trans_entry {
+	int hot_ratio;
+	int line_num;
+	int chk_num;
+
+	void *cache_ptr; /* start location of cache */
+
+	atomic_t free_ready; /* if true then this cannot be selected as victim */
+	struct list_head free_list;
+};
+
+struct pblk_trans_dir {
+	atomic64_t usage;
+	struct pblk_trans_entry *entry;
+};
+
 struct pblk {
 	struct nvm_tgt_dev *dev;
 	struct gendisk *disk;
@@ -700,27 +721,6 @@ struct pblk_line_ws {
 	struct pblk_line *line;
 	void *priv;
 	struct work_struct ws;
-};
-
-struct pblk_trans_cache {
-	atomic64_t usage;
-	unsigned char *trans_map; /* lba-ppa memory cache */
-};
-
-struct pblk_trans_entry {
-	int hot_ratio;
-	int line_num;
-	int chk_num;
-
-	void *cache_ptr; /* start location of cache */
-
-	atomic_t free_ready; /* if true then this cannot be selected as victim */
-	struct list_head free_list;
-};
-
-struct pblk_trans_dir {
-	atomic64_t usage;
-	struct pblk_trans_entry *entry;
 };
 
 #define pblk_g_rq_size (sizeof(struct nvm_rq) + sizeof(struct pblk_g_ctx))
