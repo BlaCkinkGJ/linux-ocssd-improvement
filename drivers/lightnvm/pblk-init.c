@@ -1238,6 +1238,12 @@ static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,
 		goto fail_stop_writer;
 	}
 
+	ret = pblk_trans_init(pblk);
+	if (ret) {
+		pr_err("pblk: could not initialize translation directory\n");
+		goto fail_free_trans;
+	}
+
 	/* inherit the size from the underlying device */
 	blk_queue_logical_block_size(tqueue, queue_physical_block_size(bqueue));
 	blk_queue_max_hw_sectors(tqueue, queue_max_hw_sectors(bqueue));
@@ -1262,6 +1268,8 @@ static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,
 
 	return pblk;
 
+fail_free_trans:
+	pblk_trans_init(pblk);
 fail_stop_writer:
 	pblk_writer_stop(pblk);
 fail_free_l2p:
@@ -1316,5 +1324,6 @@ module_init(pblk_module_init);
 module_exit(pblk_module_exit);
 MODULE_AUTHOR("Javier Gonzalez <javier@cnexlabs.com>");
 MODULE_AUTHOR("Matias Bjorling <matias@cnexlabs.com>");
+MODULE_AUTHOR("O Gijun <kijunking@pusan.ac.kr>");
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Physical Block-Device for Open-Channel SSDs");

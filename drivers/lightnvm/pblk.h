@@ -29,6 +29,8 @@
 #include <linux/crc32.h>
 #include <linux/uuid.h>
 
+#include <asm/div64.h>
+
 #include <linux/lightnvm.h>
 
 /* Run only GC if less than 1/X blocks are free */
@@ -55,6 +57,10 @@
 #define PBLK_GEN_WS_POOL_SIZE (2)
 
 #define PBLK_DEFAULT_OP (11)
+
+/* D-FTL setting */
+#define PBLK_TRANS_CACHE_SIZE (20) /* Cache size */
+#define PBLK_TRANS_MEM_TABLE ;     /* Use memory l2p table */
 
 enum {
 	PBLK_READ		= READ,
@@ -575,23 +581,32 @@ struct pblk_addrf {
 
 struct pblk_trans_cache {
 	atomic64_t usage;
-	unsigned char *trans_map; /* lba-ppa memory cache */
+	unsigned char *trans_map; /* compatible type of the mapping table */
+	                          /* (u64 or u32 casting is necessary!) */
 };
 
 struct pblk_trans_entry {
 	int hot_ratio;
-	int line_num;
+	int line_id;
 	int chk_num;
 
 	void *cache_ptr; /* start location of cache */
 
 	atomic_t free_ready; /* if true then this cannot be selected as victim */
-	struct list_head free_list;
+	struct list_head list;
+};
+
+struct pblk_trans_op {
+	int (*read) (struct pblk *);
+	int (*write) (struct pblk *);
+	int (*erase) (struct pblk *);
 };
 
 struct pblk_trans_dir {
 	atomic64_t usage;
 	struct pblk_trans_entry *entry;
+	struct pblk_trans_op *op;
+	struct list_head free_list;
 };
 
 struct pblk {
@@ -933,15 +948,11 @@ int pblk_rl_is_limit(struct pblk_rl *rl);
 /*
  * pblk trans
  */
-int pblk_trans_cache_entry_add(unsigned char *trans_map, unsigned char lba,
-		unsigned char ppa);
-int pblk_trans_cache_l2p_flush(struct pblk_trans_entry *entry);
-void pblk_trans_cache_update_l2p(unsigned char *trans_map_entry);
-int pblk_trans_dir_entry_add(struct pblk_trans_dir *dir, struct pblk_trans_entry *entry);
-unsigned char pblk_trans_get_ppa_from_entry (struct pblk_trans_dir *dir, unsigned char lba);
-void pblk_trans_free_entry_add(struct list_head *free_list, struct pblk_trans_entry *entry);
-void pblk_trans_free_entry_delete(struct list_head *free_list, struct list_head *target);
+int pblk_trans_init(struct pblk *pblk);
+struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
+void pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
 
+void pblk_trans_free(struct pblk *pblk);
 
 /*
  * pblk sysfs

@@ -819,6 +819,7 @@ static int pblk_line_submit_smeta_io(struct pblk *pblk, struct pblk_line *line,
 	rqd.dma_ppa_list = rqd.dma_meta_list + pblk_dma_meta_size;
 
 	bio = bio_map_kern(dev->q, line->smeta, lm->smeta_len, GFP_KERNEL);
+	if (IS_ERR(bio)) {
 		ret = PTR_ERR(bio);
 		goto free_ppa_list;
 	}
