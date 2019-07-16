@@ -580,15 +580,17 @@ struct pblk_addrf {
 };
 
 struct pblk_trans_cache {
-	atomic64_t usage;
+	size_t size;
 	unsigned char *trans_map; /* compatible type of the mapping table */
 	                          /* (u64 or u32 casting is necessary!) */
+	unsigned char *bucket; /* It is a kind of write buffer */
 };
 
 struct pblk_trans_entry {
 	int hot_ratio;
 	int line_id;
 	int chk_num;
+	size_t chk_size;
 
 	void *cache_ptr; /* start location of cache */
 
@@ -597,13 +599,13 @@ struct pblk_trans_entry {
 };
 
 struct pblk_trans_op {
-	int (*read) (struct pblk *);
-	int (*write) (struct pblk *);
-	int (*erase) (struct pblk *);
+	int (*read) (struct pblk *, struct pblk_trans_entry *);
+	int (*write) (struct pblk *, struct pblk_trans_entry *);
+	int (*erase) (struct pblk *, struct pblk_trans_entry *);
 };
 
 struct pblk_trans_dir {
-	atomic64_t usage;
+	int enable; /* Initial recovery successful then this is true */
 	struct pblk_trans_entry *entry;
 	struct pblk_trans_op *op;
 	struct list_head free_list;
@@ -951,9 +953,8 @@ int pblk_rl_is_limit(struct pblk_rl *rl);
 int pblk_trans_init(struct pblk *pblk);
 struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
 void pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
-
 void pblk_trans_free(struct pblk *pblk);
-
+size_t pblk_trans_map_size(struct pblk *pblk);
 /*
  * pblk sysfs
  */
@@ -1184,6 +1185,11 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 {
 	struct ppa_addr ppa;
 
+#ifndef PBLK_DISABLE_D_FTL
+	if (pblk->dir.enable)
+		return pblk_trans_l2p_map_get(pblk, lba);
+#endif
+
 	if (pblk->addrf_len < 32) {
 		u32 *map = (u32 *)pblk->trans_map;
 
@@ -1200,6 +1206,13 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
+#ifndef PBLK_DISABLE_D_FTL
+	if (pblk->dir.enable) {
+		pblk_trans_l2p_map_set(pblk, lba, ppa);
+		return ;
+	}
+#endif
+
 	if (pblk->addrf_len < 32) {
 		u32 *map = (u32 *)pblk->trans_map;
 

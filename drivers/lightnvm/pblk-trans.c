@@ -16,13 +16,51 @@
 
 #include "pblk.h"
 
+static int pblk_trans_recov_from_mem(struct pblk *pblk)
+{
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+	struct pblk_line_meta *lm = &pblk->lm;
+	struct pblk_trans_dir *dir = &pblk->dir;
+	const size_t map_size = pblk_trans_map_size(pblk);
+	int chk_num = 0, line_id = 0;
+	size_t addr = 0;
+
+	/**
+	 * Save the trans map to device.
+	 * TODO: if snapshot exists then this will be skipped.
+	 */
+	for(addr = 0; addr < map_size; addr += geo->clba) {
+		struct pblk_trans_entry *now = &dir->entry[chk_num];
+		int tmp_chk_num = 0;
+
+		now->hot_ratio = -1;
+		now->line_id = line_id;
+		now->cache_ptr = pblk->trans_map + addr;
+
+		tmp_chk_num = now->chk_num = chk_num;
+
+		if(!dir->op->write(pblk, now))
+			return -EINVAL;
+		/* TODO: Below comment deletion is enabled only when you finish to test read and write about global translation directory*/
+		// now->cache_ptr = NULL; 
+		chk_num += 1;
+		if (do_div(tmp_chk_num, lm->blk_per_line) == 0)
+			line_id += 1;
+	}
+
+#ifndef PBLK_TRANS_MEM_TABLE
+	vfree(pblk->trans_map);
+#endif
+}
+
 #ifdef PBLK_TRANS_MEM_TABLE
-static int memory_l2p_read(struct pblk *pblk)
+static int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	return 0;
 }
 
-static int memory_l2p_write(struct pblk *pblk)
+static int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	return 0;
 }
@@ -45,26 +83,32 @@ int pblk_trans_init(struct pblk *pblk)
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 
 	unsigned int nr_chks = lm->blk_per_line * l_mg->nr_lines;
-	unsigned int entry_size = sizeof(struct pblk_trans_entry);
+	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
 
 	/* clba means chunk size*/
-	cache->trans_map = vmalloc(geo->clba * PBLK_TRANS_CACHE_SIZE); 
-	if (!cache->trans_map)
+	cache->size = geo->clba * PBLK_TRANS_CACHE_SIZE;
+	cache->trans_map = kzalloc(cache->size, GFP_KERNEL); 
+	if (!cache->trans_map) {
+		cache->size = 0;
 		return -ENOMEM;
-	atomic64_set(&cache->usage, 0);
+	}
 
+	cache->bucket = kzalloc(geo->clba, GFP_KERNEL);
+	if (!cache->bucket) {
+		return -ENOMEM;
+	}
 
-	dir->entry = kzalloc(nr_chks*entry_size, GFP_KERNEL);
+	/* sequential memory allocated */
+	dir->entry = kzalloc(nr_chks*dir_entry_size, GFP_KERNEL);
 	if (!dir->entry)
 		return -ENOMEM;
-	atomic64_set(&dir->usage, 0);
 	dir->op = &trans_op;
 	INIT_LIST_HEAD(&(dir->free_list));
 
 	/* @TODO: You must binding the operation to this part */
 
 	trace_printk("cache size: %d\tentry size: %d\n",
-			(geo->clba * PBLK_TRANS_CACHE_SIZE), (nr_chks*entry_size));
+			(geo->clba * PBLK_TRANS_CACHE_SIZE), (nr_chks*dir_entry_size));
 
 	return 0;
 }
@@ -144,7 +188,10 @@ void pblk_trans_free(struct pblk *pblk)
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	vfree(cache->trans_map);
+	kfree(cache->trans_map);
 	kfree(dir->entry);
+#ifdef PBLK_TRANS_MEM_TABLE
+	vfree(pblk->trans_map);
+#endif
 }
 
