@@ -778,6 +778,8 @@ u64 pblk_line_smeta_start(struct pblk *pblk, struct pblk_line *line)
 	if (bit >= lm->blk_per_line)
 		return -1;
 
+	// Gijun: ws_opt is optimal write size
+	// This just traverse the write position
 	return bit * geo->ws_opt;
 }
 
@@ -805,6 +807,7 @@ static int pblk_line_submit_smeta_io(struct pblk *pblk, struct pblk_line *line,
 	} else
 		return -EINVAL;
 
+	// nvme request
 	memset(&rqd, 0, sizeof(struct nvm_rq));
 
 	rqd.meta_list = nvm_dev_dma_alloc(dev->parent, GFP_KERNEL,
@@ -816,7 +819,6 @@ static int pblk_line_submit_smeta_io(struct pblk *pblk, struct pblk_line *line,
 	rqd.dma_ppa_list = rqd.dma_meta_list + pblk_dma_meta_size;
 
 	bio = bio_map_kern(dev->q, line->smeta, lm->smeta_len, GFP_KERNEL);
-	if (IS_ERR(bio)) {
 		ret = PTR_ERR(bio);
 		goto free_ppa_list;
 	}

@@ -141,6 +141,7 @@ static int pblk_recov_l2p_from_emeta(struct pblk *pblk, struct pblk_line *line)
 	data_end = line->emeta_ssec;
 	nr_valid_lbas = le64_to_cpu(emeta_buf->nr_valid_lbas);
 
+	// data's first address to last address
 	for (i = data_start; i < data_end; i++) {
 		struct ppa_addr ppa;
 		int pos;
@@ -898,7 +899,9 @@ struct pblk_line *pblk_recov_l2p(struct pblk *pblk)
 	/* Scan recovery - takes place when FTL snapshot fails */
 	spin_lock(&l_mg->free_lock);
 	meta_line = find_first_zero_bit(&l_mg->meta_bitmap, PBLK_DATA_LINES);
+	// Gijun: Why do this? I can't understand...
 	set_bit(meta_line, &l_mg->meta_bitmap);
+	// Gijun: just get pointer. sline_meta doesn't have any value.
 	smeta = l_mg->sline_meta[meta_line];
 	emeta = l_mg->eline_meta[meta_line];
 	smeta_buf = (struct line_smeta *)smeta;

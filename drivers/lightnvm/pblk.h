@@ -662,6 +662,21 @@ struct pblk {
 	unsigned char *trans_map;
 	spinlock_t trans_lock;
 
+	/*
+	 * This is the D-FTL features
+	 * pblk_trans_cache means that 'cached mapping table' and
+	 * pblk_trans_dir means that 'global translation directory'
+	 * 
+	 * However, this is not same as original D-FTL.
+	 * For example, original D-FTL consists global translation directory
+	 * after cached mapping table. But in our cases, global translation directory
+	 * before cached mapping table.
+	 *
+	 * Like this, our D-FTL is some different from original one
+	 */
+	struct pblk_trans_cache cache;
+	struct pblk_trans_dir dir;
+
 	struct list_head compl_list;
 
 	mempool_t *page_bio_pool;
@@ -685,6 +700,27 @@ struct pblk_line_ws {
 	struct pblk_line *line;
 	void *priv;
 	struct work_struct ws;
+};
+
+struct pblk_trans_cache {
+	atomic64_t usage;
+	unsigned char *trans_map; /* lba-ppa memory cache */
+};
+
+struct pblk_trans_entry {
+	int hot_ratio;
+	int line_num;
+	int chk_num;
+
+	void *cache_ptr; /* start location of cache */
+
+	atomic_t free_ready; /* if true then this cannot be selected as victim */
+	struct list_head free_list;
+};
+
+struct pblk_trans_dir {
+	atomic64_t usage;
+	struct pblk_trans_entry *entry;
 };
 
 #define pblk_g_rq_size (sizeof(struct nvm_rq) + sizeof(struct pblk_g_ctx))
@@ -893,6 +929,19 @@ void pblk_rl_free_lines_inc(struct pblk_rl *rl, struct pblk_line *line);
 void pblk_rl_free_lines_dec(struct pblk_rl *rl, struct pblk_line *line,
 			    bool used);
 int pblk_rl_is_limit(struct pblk_rl *rl);
+
+/*
+ * pblk trans
+ */
+int pblk_trans_cache_entry_add(unsigned char *trans_map, unsigned char lba,
+		unsigned char ppa);
+int pblk_trans_cache_l2p_flush(struct pblk_trans_entry *entry);
+void pblk_trans_cache_update_l2p(unsigned char *trans_map_entry);
+int pblk_trans_dir_entry_add(struct pblk_trans_dir *dir, struct pblk_trans_entry *entry);
+unsigned char pblk_trans_get_ppa_from_entry (struct pblk_trans_dir *dir, unsigned char lba);
+void pblk_trans_free_entry_add(struct list_head *free_list, struct pblk_trans_entry *entry);
+void pblk_trans_free_entry_delete(struct list_head *free_list, struct list_head *target);
+
 
 /*
  * pblk sysfs
