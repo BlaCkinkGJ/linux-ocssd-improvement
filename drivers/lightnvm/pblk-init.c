@@ -102,7 +102,7 @@ static void pblk_l2p_free(struct pblk *pblk)
 {
 	pblk_trans_free(pblk);
 #ifdef PBLK_DISABLE_D_FTL
-	lfree(pblk->trans_map);
+	vfree(pblk->trans_map);
 #endif
 }
 

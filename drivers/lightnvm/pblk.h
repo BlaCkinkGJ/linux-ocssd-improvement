@@ -580,7 +580,8 @@ struct pblk_addrf {
 };
 
 struct pblk_trans_cache {
-	size_t size;
+	/* When you use the size then you have to multiply 'entry_size' */
+	size_t size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	unsigned char *trans_map; /* compatible type of the mapping table */
 	                          /* (u64 or u32 casting is necessary!) */
 	unsigned char *bucket; /* It is a kind of write buffer */
@@ -590,7 +591,8 @@ struct pblk_trans_entry {
 	int hot_ratio;
 	int line_id;
 	int chk_num;
-	u32 chk_size;
+	/* When you use the size then you have to multiply 'entry_size' */
+	u32 chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 
 	void *cache_ptr; /* start location of cache */
 

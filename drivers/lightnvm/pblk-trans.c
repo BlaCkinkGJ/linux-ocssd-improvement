@@ -16,6 +16,19 @@
 
 #include "pblk.h"
 
+static int pblk_trans_entry_size_get(struct pblk *pblk)
+{
+	sector_t entry_size = 0;
+
+	if (pblk->addrf_len < 32) {
+		entry_size = 4;
+	} else {
+		entry_size = 8;
+	}
+	
+	return entry_size;
+}
+
 static int pblk_trans_recov_from_mem(struct pblk *pblk)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
@@ -24,19 +37,13 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	struct pblk_trans_dir *dir = &pblk->dir;
 
 	int chk_num = 0, line_id = 0;
-	sector_t addr = 0, entry_size = 0;
+	sector_t addr = 0;
+	sector_t entry_size = pblk_trans_entry_size_get(pblk);
 
 	/**
 	 * Save the trans map to device.
 	 * TODO: if snapshot exists then this will be skipped.
 	 */
-
-	if (pblk->addrf_len < 32) {
-		entry_size = 4;
-	} else {
-		entry_size = 8;
-	}
-
 	for(addr = 0; addr <= pblk->rl.nr_secs; addr += geo->clba) {
 		struct pblk_trans_entry *now = &dir->entry[chk_num];
 		int tmp_chk_num = 0;
@@ -51,7 +58,10 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		if(dir->op->write(pblk, now))
 			return -EINVAL;
 
-		/* TODO: Below comment deletion is enabled only when you finish to test read and write about global translation directory*/
+		/**
+		 * TODO: Below comment deletion is enabled only 
+		 * when you finish to test read and write about global translation directory
+		 */
 		// now->cache_ptr = NULL; 
 		tmp_chk_num = chk_num += 1;
 		if (do_div(tmp_chk_num, lm->blk_per_line) == 0)
@@ -113,15 +123,17 @@ int pblk_trans_init(struct pblk *pblk)
 	unsigned int nr_chks = lm->blk_per_line * l_mg->nr_lines;
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
 
+	sector_t entry_size = pblk_trans_entry_size_get(pblk);
+
 	/* clba means chunk size*/
 	cache->size = geo->clba * PBLK_TRANS_CACHE_SIZE;
-	cache->trans_map = kzalloc(cache->size, GFP_KERNEL); 
+	cache->trans_map = kzalloc(cache->size * entry_size, GFP_KERNEL); 
 	if (!cache->trans_map) {
 		cache->size = 0;
 		return -ENOMEM;
 	}
 
-	cache->bucket = kzalloc(geo->clba, GFP_KERNEL);
+	cache->bucket = kzalloc(geo->clba * entry_size, GFP_KERNEL);
 	if (!cache->bucket) {
 		return -ENOMEM;
 	}
@@ -177,7 +189,6 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 	}
 	pblk_trans_entry_update(&dir->entry[base]);
 
-	trace_printk(" <<< cache_ptr: %p, lba: %lu, ppa: %llu, base: %lu, offset: %lu\n",ptr ,lba ,ppa.ppa, base, offset);
 	return ppa;
 }
 
