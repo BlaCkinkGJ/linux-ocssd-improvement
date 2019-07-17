@@ -58,10 +58,6 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		if(dir->op->write(pblk, now))
 			return -EINVAL;
 
-		/**
-		 * TODO: Below comment deletion is enabled only 
-		 * when you finish to test read and write about global translation directory
-		 */
 		now->cache_ptr = NULL; 
 		tmp_chk_num = chk_num += 1;
 		if (do_div(tmp_chk_num, lm->blk_per_line) == 0)
@@ -74,9 +70,45 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	return 0;
 }
 
+static void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src,
+		size_t size)
+{
+	size_t i;
+	if (pblk->addrf_len < 32) {
+		u32 *chk_dst = (u32 *)dst;
+		u32 *chk_src = (u32 *)src;
+		for(i = 0; i < size; i++) {
+			chk_dst[i] = chk_src[i];
+		}
+	} else {
+		struct ppa_addr *chk_dst = (struct ppa_addr *)dst;
+		struct ppa_addr *chk_src = (struct ppa_addr *)src;
+		for(i = 0; i < size; i++) {
+			chk_dst[i] = chk_src[i];
+		}
+	}
+}
+
+
 #ifdef PBLK_TRANS_MEM_TABLE
+/**
+ * if the chunk number is changed then must change it
+ * in this function
+ */
 static int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+	
+	struct pblk_trans_cache *cache = &pblk->cache;
+	struct pblk_trans_dir *dir = &pblk->dir;
+
+	int entry_size = pblk_trans_entry_size_get(pblk);
+	sector_t addr = entry->chk_num*geo->clba*entry_size;
+
+	pblk_trans_mem_copy(pblk, cache->bucket, &pblk->trans_map[addr],
+			entry->chk_size);
+
 	return 0;
 }
 
@@ -85,21 +117,18 @@ static int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
 
-	size_t i;
-	sector_t lba = entry->chk_num*geo->clba;
+	struct pblk_trans_dir *dir = &pblk->dir;
 
-	unsigned char *memory_table = &pblk->trans_map[lba];
-	unsigned char *cache_table = entry->cache_ptr;
+	int entry_size = pblk_trans_entry_size_get(pblk);
+	sector_t addr = entry->chk_num*geo->clba*entry_size;
 
 	if (entry->cache_ptr == NULL)
 		return -EINVAL;
-
 	if (entry->hot_ratio < 0) /* This means that table is intial state */
 		return 0;
 
-	for(i = 0; i < entry->chk_size; i++) {
-		memory_table[i] = cache_table[i];
-	}
+	pblk_trans_mem_copy(pblk, &pblk->trans_map[addr], entry->cache_ptr,
+			entry->chk_size);
 
 	return 0;
 }
@@ -109,24 +138,6 @@ static struct pblk_trans_op trans_op = {
 	.write = memory_l2p_write,
 };
 #endif
-
-static void pblk_trans_print_entry_table(struct pblk *pblk)
-{
-	struct pblk_trans_dir *dir = &pblk->dir;
-	size_t entry_num = dir->entry_num;
-	int index = 0;
-
-	trace_printk("hot_ratio/line_id/chk_num/chk_size/cache_ptr\n");
-	for (index = 0; index < entry_num; index++){
-		struct pblk_trans_entry *entry = &dir->entry[index];
-		trace_printk("%d, %d, %d, %lu, %p\n",
-				entry->hot_ratio,
-				entry->line_id,
-				entry->chk_num,
-				entry->chk_size,
-				entry->cache_ptr);
-	}
-}
 
 int pblk_trans_init(struct pblk *pblk)
 {
@@ -179,7 +190,7 @@ int pblk_trans_init(struct pblk *pblk)
 	dir->enable = 1;
 
 	/* DEBUG FUNCTION! THIS WILL BE ERASED */ 
-	pblk_trans_print_entry_table(pblk);
+	// pblk_trans_print_entry_table(pblk);
 
 	return 0;
 }
@@ -222,42 +233,134 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 
 static int pblk_trans_victim_select (struct pblk *pblk)
 {
-	int victim_bit = -1;
+	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_cache *cache = &pblk->cache;
+	int victim_bit = 0;
+	size_t i = 0;
+	int coldest = dir->entry[0].hot_ratio;
+
+	/**
+	 * THIS IS COMPLETELY WRONG.
+	 * BECAUSE OF THE ENTRY'S INDEX DOESN'T MEAN
+	 * THAT CACHE LOCATION.
+	 *
+	 * SO YOU HAVE TO CHANGE THE
+	 * CACHE_PTR % (CHUNK_SIZE*ENTRY_SIZE)
+	 * THIS IS MORE CORRECT!!!!
+	 */
+	for (i = 1; i < dir->entry_num; i++) {
+		if (dir->entry[i].hot_ratio < coldest &&
+				dir->entry[i].cache_ptr != NULL) {
+			victim_bit = i;
+			coldest = dir->entry[i].hot_ratio;
+		}
+	}
+	dir->entry[victim_bit].cache_ptr = NULL;
+	dir->entry[victim_bit].hot_ratio = -1;
+
 	clear_bit(victim_bit, cache->free_bitmap);
 	return victim_bit;
 }
 
-static void pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
+static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
-	int bit = -1;
+	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_entry *entry;
+
+	unsigned char *cache_chk = NULL;
+	sector_t entry_size = pblk_trans_entry_size_get(pblk);
+	sector_t base = lba;
+	int bit = -1, i = 0;
+
+	do_div(base, dir->entry[0].chk_size);
+	entry = &dir->entry[base];
 
 	bit = find_first_zero_bit(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 
 	if (bit >= PBLK_TRANS_CACHE_SIZE) { /* victim selected */
 		bit = pblk_trans_victim_select(pblk);
+		if(dir->op->write(pblk, &dir->entry[bit]))
+			return -EINVAL;
 	}
 
 	/* @TODO: bucket mapping sequence required!! */
-
 	if(dir->op->read(pblk, entry))
 		return -EINVAL;
 
+	cache_chk = &(cache->trans_map[bit*entry->chk_size*entry_size]);
+	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, entry->chk_size);
+	entry->cache_ptr = cache_chk;
+	set_bit(bit, cache->free_bitmap);
+
+	trace_printk("===> bit status: %ul", cache->free_bitmap);
+	trace_printk("hot, line, chk, size, ptr\n");
+	for (i = 0; i < (int)dir->entry_num; i++)
+		trace_printk("%d\t%d\t%d\t%lu\t%p\n",
+				dir->entry[i].hot_ratio,
+				dir->entry[i].line_id,
+				dir->entry[i].chk_num,
+				dir->entry[i].chk_size,
+				dir->entry[i].cache_ptr);
+	return 0;
 }
 
 struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 {
 	struct ppa_addr ppa = pblk_trans_ppa_get(pblk, lba);
 
-	if (!ppa.ppa) { /* cache miss*/
-		pblk_trans_update_cache (pblk, lba);
+	if (!ppa.ppa) { /* cache miss */
+		if (pblk_trans_update_cache (pblk, lba)) {
+			return ppa; /* error occured */
+		}
 		ppa = pblk_trans_ppa_get(pblk, lba);
 	}
 	return ppa;
 }
 
-void pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa)
+static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
+		struct ppa_addr ppa)
 {
+	struct pblk_trans_dir *dir = &pblk->dir;
+
+	sector_t base = lba;
+	sector_t offset; 
+	void *ptr;
+
+	offset = do_div(base, dir->entry[0].chk_size);
+	ptr = dir->entry[base].cache_ptr;
+
+	if (ptr == NULL) /* cache miss */
+		return -EINVAL;
+
+	if (pblk->addrf_len < 32) {
+		u32 *chk = (u32 *)ptr;
+
+		chk[offset] = pblk_ppa64_to_ppa32(pblk, ppa);
+	} else {
+		struct ppa_addr *chk = (struct ppa_addr *)ptr;
+
+		chk[offset] = ppa;
+	}
+	pblk_trans_entry_update(&dir->entry[base]);
+
+	return 0;
+}
+
+
+
+int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
+		struct ppa_addr ppa)
+{
+	struct ppa_addr cached_ppa = pblk_trans_ppa_get(pblk, lba);
+
+	if (!cached_ppa.ppa) { /* cache miss */
+		if (pblk_trans_update_cache (pblk, lba)) {
+			return -EINVAL;
+		}
+	}
+
+	return pblk_trans_ppa_set(pblk, lba, ppa);
 }
 
 void pblk_trans_free(struct pblk *pblk)

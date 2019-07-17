@@ -609,7 +609,7 @@ struct pblk_trans_dir {
 	int enable; /* Initial recovery successful then this is true */
 	struct pblk_trans_entry *entry;
 	struct pblk_trans_op *op;
-	struct list_head free_list;
+	spinlock_t lock;
 };
 
 struct pblk {
@@ -953,7 +953,7 @@ int pblk_rl_is_limit(struct pblk_rl *rl);
  */
 int pblk_trans_init(struct pblk *pblk);
 struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
-void pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
+int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
 void pblk_trans_free(struct pblk *pblk);
 size_t pblk_trans_map_size(struct pblk *pblk);
 /*
@@ -1207,14 +1207,12 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
-/*
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		pblk_trans_l2p_map_set(pblk, lba, ppa);
 		return ;
 	}
 #endif
-*/
 
 	if (pblk->addrf_len < 32) {
 		u32 *map = (u32 *)pblk->trans_map;
