@@ -590,7 +590,7 @@ struct pblk_trans_entry {
 	int hot_ratio;
 	int line_id;
 	int chk_num;
-	size_t chk_size;
+	u32 chk_size;
 
 	void *cache_ptr; /* start location of cache */
 
@@ -605,6 +605,7 @@ struct pblk_trans_op {
 };
 
 struct pblk_trans_dir {
+	size_t entry_num;
 	int enable; /* Initial recovery successful then this is true */
 	struct pblk_trans_entry *entry;
 	struct pblk_trans_op *op;
@@ -1206,12 +1207,14 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
+/*
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		pblk_trans_l2p_map_set(pblk, lba, ppa);
 		return ;
 	}
 #endif
+*/
 
 	if (pblk->addrf_len < 32) {
 		u32 *map = (u32 *)pblk->trans_map;
