@@ -585,6 +585,7 @@ struct pblk_trans_cache {
 	unsigned char *trans_map; /* compatible type of the mapping table */
 	                          /* (u64 or u32 casting is necessary!) */
 	unsigned char *bucket; /* It is a kind of write buffer */
+	unsigned long *free_bitmap;
 };
 
 struct pblk_trans_entry {
@@ -592,12 +593,9 @@ struct pblk_trans_entry {
 	int line_id;
 	int chk_num;
 	/* When you use the size then you have to multiply 'entry_size' */
-	u32 chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
+	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 
 	void *cache_ptr; /* start location of cache */
-
-	atomic_t free_ready; /* if true then this cannot be selected as victim */
-	struct list_head list;
 };
 
 struct pblk_trans_op {
