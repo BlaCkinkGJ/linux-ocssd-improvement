@@ -59,7 +59,7 @@
 #define PBLK_DEFAULT_OP (11)
 
 /* D-FTL setting */
-#define PBLK_TRANS_CACHE_SIZE (20) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (40) /* Cache size */
 #define PBLK_TRANS_MEM_TABLE ;     /* Use memory l2p table */
 
 enum {
@@ -595,7 +595,7 @@ struct pblk_trans_entry {
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	unsigned long bit_idx;
-	void *cache_ptr; /* start location of cache */
+	unsigned char*cache_ptr; /* start location of cache */
 };
 
 struct pblk_trans_op {

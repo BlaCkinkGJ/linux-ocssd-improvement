@@ -16,6 +16,21 @@
 
 #include "pblk.h"
 
+static void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset)
+{
+	void *ret = NULL;
+	if (pblk->addrf_len < 32) {
+		u32 *map = (u32 *)ptr;
+		map = &map[offset];
+		ret = (void *)map;
+	} else {
+		struct ppa_addr *map = (struct ppa_addr *)ptr;
+		map = &map[offset];
+		ret = (void *)map;
+	}
+	return ret;
+}
+
 static int pblk_trans_entry_size_get(struct pblk *pblk)
 {
 	sector_t entry_size = 0;
@@ -33,36 +48,36 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
-	struct pblk_line_meta *lm = &pblk->lm;
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	int chk_num = 0, line_id = 0;
+	int index = 0;
+
 	sector_t addr = 0;
+	sector_t chk_size = geo->clba;
 	sector_t entry_size = pblk_trans_entry_size_get(pblk);
+
+	do_div(chk_size, entry_size);
 
 	/**
 	 * Save the trans map to device.
 	 * TODO: if snapshot exists then this will be skipped.
 	 */
-	for(addr = 0; addr <= pblk->rl.nr_secs; addr += geo->clba) {
-		struct pblk_trans_entry *now = &dir->entry[chk_num];
-		int tmp_chk_num = 0;
+	for(addr = 0; addr <= pblk->rl.nr_secs; addr += chk_size) {
+		struct pblk_trans_entry *now = &dir->entry[index];
 
 		now->hot_ratio = -1;
-		now->line_id = line_id;
+		now->line_id = -1;
+		now->chk_num = -1;
 		now->bit_idx = 0;
-		now->cache_ptr = pblk->trans_map + addr * entry_size;
-		now->chk_num = chk_num;
+		now->cache_ptr = pblk_trans_ptr_get(pblk, pblk->trans_map, addr);
 
-		now->chk_size = geo->clba;
+		now->chk_size = chk_size;
 
 		if(dir->op->write(pblk, now))
 			return -EINVAL;
 
 		now->cache_ptr = NULL; 
-		tmp_chk_num = chk_num += 1;
-		if (do_div(tmp_chk_num, lm->blk_per_line) == 0)
-			line_id += 1;
+		index++;
 	}
 
 #ifndef PBLK_TRANS_MEM_TABLE
@@ -71,8 +86,8 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	return 0;
 }
 
-static void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src,
-		size_t size)
+static void pblk_trans_mem_copy(struct pblk* pblk,
+		unsigned char *dst, unsigned char *src, size_t size)
 {
 	size_t i;
 	if (pblk->addrf_len < 32) {
@@ -92,44 +107,51 @@ static void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned 
 
 
 #ifdef PBLK_TRANS_MEM_TABLE
-/**
- * if the chunk number is changed then must change it
- * in this function
- */
 static int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
-	
 	struct pblk_trans_cache *cache = &pblk->cache;
-	struct pblk_trans_dir *dir = &pblk->dir;
 
-	int entry_size = pblk_trans_entry_size_get(pblk);
-	sector_t addr = entry->chk_num*geo->clba*entry_size;
+	/* Read I/O processed in this location */
+	sector_t offset = entry->chk_num*entry->chk_size;
+	void *map_ptr = pblk_trans_ptr_get(pblk, pblk->trans_map, offset);
+	/* Read I/O processed in this location */
 
-	pblk_trans_mem_copy(pblk, cache->bucket, &pblk->trans_map[addr],
-			entry->chk_size);
+	pblk_trans_mem_copy(pblk, cache->bucket, map_ptr, entry->chk_size);
 
 	return 0;
 }
 
 static int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
+	sector_t offset = 0; 
+	void *map_ptr = NULL; 
 
-	struct pblk_trans_dir *dir = &pblk->dir;
-
-	int entry_size = pblk_trans_entry_size_get(pblk);
-	sector_t addr = entry->chk_num*geo->clba*entry_size;
+	/* only used in memory simulator. DON'T USE IN SSD */
+	static int memory_index = 0;
+	int index = entry->chk_num;
+	/* only used in memory simulator. DON'T USE IN SSD */
 
 	if (entry->cache_ptr == NULL)
 		return -EINVAL;
-	if (entry->hot_ratio < 0) /* This means that table is intial state */
+
+	/* Submit I/O processed in this location */
+	if (entry->chk_num == -1) {
+		index = memory_index;
+		memory_index++;
+	}
+
+	entry->chk_num = index;
+	entry->line_id = 0; /* This doesn't have any meaning. */
+
+	/* This means that table is in initial state */
+	if (entry->hot_ratio < 0) 
 		return 0;
 
-	pblk_trans_mem_copy(pblk, &pblk->trans_map[addr], entry->cache_ptr,
-			entry->chk_size);
+	offset = entry->chk_num*entry->chk_size;
+	map_ptr = pblk_trans_ptr_get(pblk, pblk->trans_map, offset);
+
+	pblk_trans_mem_copy(pblk, map_ptr, entry->cache_ptr, entry->chk_size);
+	/* Submit I/O processed in this location */
 
 	return 0;
 }
@@ -151,35 +173,45 @@ int pblk_trans_init(struct pblk *pblk)
 	struct pblk_line_meta *lm = &pblk->lm;
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 
+	sector_t entry_size = pblk_trans_entry_size_get(pblk);
+
 	unsigned int nr_chks = lm->blk_per_line * l_mg->nr_lines;
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
 	unsigned int bitmap_size = PBLK_TRANS_CACHE_SIZE;
 
-	sector_t entry_size = pblk_trans_entry_size_get(pblk);
-
 	/* clba means chunk size*/
 	cache->size = geo->clba * PBLK_TRANS_CACHE_SIZE;
-	cache->trans_map = kzalloc(cache->size * entry_size, GFP_KERNEL); 
+	cache->trans_map = kzalloc(cache->size, GFP_KERNEL); 
 	if (!cache->trans_map) {
 		cache->size = 0;
 		return -ENOMEM;
 	}
 
-	cache->bucket = kzalloc(geo->clba * entry_size, GFP_KERNEL);
+	cache->bucket = kzalloc(geo->clba, GFP_KERNEL);
 	if (!cache->bucket) {
 		return -ENOMEM;
 	}
 
-	/* @TODO: optimization needed!!! */
-	do_div(bitmap_size, entry_size * BITS_PER_BYTE);
+	/* TODO: optimization needed!!! */
+	do_div(bitmap_size, BITS_PER_BYTE);
 	cache->free_bitmap = kzalloc(bitmap_size + 1, GFP_KERNEL);
 	if (!cache->free_bitmap) {
 		return -ENOMEM;
 	}
 	bitmap_zero(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 
-	/* sequential memory allocated */
-	dir->entry_num = nr_chks;
+	/**
+	 * Why multiplicate entry_size? 
+	 *
+	 * Because of the one chunk has a lot of lba.
+	 * (e.g. 4096 which is same as geo->clba)
+	 * 
+	 * But one chunk can only has chunk size divides by mapping entry size.
+	 * For example, in our cases chunk contains 1048 entries.
+	 *
+	 * For this reason, we have to multiplicate the entry_size in nr_chks
+	 */
+	dir->entry_num = nr_chks * entry_size;
 	dir->entry = kzalloc(dir->entry_num*dir_entry_size, GFP_KERNEL);
 	if (!dir->entry) {
 		return -ENOMEM;
@@ -195,7 +227,8 @@ int pblk_trans_init(struct pblk *pblk)
 
 static void pblk_trans_entry_update (struct pblk_trans_entry *entry)
 {
-	//entry->hot_ratio += 1;
+	/* TODO: hot ratio calculation formula is needed!!! */
+	/* entry->hot_ratio += 1; */
 }
 
 static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk, 
@@ -263,9 +296,8 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	struct pblk_trans_entry *entry;
 
 	unsigned char *cache_chk = NULL;
-	sector_t entry_size = pblk_trans_entry_size_get(pblk);
 	sector_t base = lba;
-	int bit = -1, i = 0;
+	int bit = -1;
 
 	do_div(base, dir->entry[0].chk_size);
 	entry = &dir->entry[base];
@@ -278,26 +310,16 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 			return -EINVAL;
 	}
 
-	/* @TODO: bucket mapping sequence required!! */
 	if(dir->op->read(pblk, entry))
 		return -EINVAL;
 
-	cache_chk = &(cache->trans_map[bit*entry->chk_size*entry_size]);
+	cache_chk = pblk_trans_ptr_get(pblk, cache->trans_map, bit*entry->chk_size);
 	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, entry->chk_size);
 	entry->cache_ptr = cache_chk;
 	entry->bit_idx = bit;
 	entry->hot_ratio = 0;
 	set_bit(bit, cache->free_bitmap);
 
-	trace_printk("===> bit status: %ul", cache->free_bitmap);
-	trace_printk("hot, line, chk, size, ptr\n");
-	for (i = 0; i < (int)dir->entry_num; i++)
-		trace_printk("%d\t%d\t%d\t%lu\t%p\n",
-				dir->entry[i].hot_ratio,
-				dir->entry[i].line_id,
-				dir->entry[i].chk_num,
-				dir->entry[i].chk_size,
-				dir->entry[i].cache_ptr);
 	return 0;
 }
 
