@@ -594,7 +594,7 @@ struct pblk_trans_entry {
 	int chk_num;
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
-
+	unsigned long bit_idx;
 	void *cache_ptr; /* start location of cache */
 };
 

@@ -50,6 +50,7 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 
 		now->hot_ratio = -1;
 		now->line_id = line_id;
+		now->bit_idx = 0;
 		now->cache_ptr = pblk->trans_map + addr * entry_size;
 		now->chk_num = chk_num;
 
@@ -189,15 +190,12 @@ int pblk_trans_init(struct pblk *pblk)
 	pblk_trans_recov_from_mem(pblk);
 	dir->enable = 1;
 
-	/* DEBUG FUNCTION! THIS WILL BE ERASED */ 
-	// pblk_trans_print_entry_table(pblk);
-
 	return 0;
 }
 
 static void pblk_trans_entry_update (struct pblk_trans_entry *entry)
 {
-	entry->hot_ratio += 1;
+	//entry->hot_ratio += 1;
 }
 
 static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk, 
@@ -235,30 +233,26 @@ static int pblk_trans_victim_select (struct pblk *pblk)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
 	struct pblk_trans_cache *cache = &pblk->cache;
-	int victim_bit = 0;
+	int victim_bit = -1, victim_entry = 0;
 	size_t i = 0;
-	int coldest = dir->entry[0].hot_ratio;
+	int coldest = INT_MAX;
 
-	/**
-	 * THIS IS COMPLETELY WRONG.
-	 * BECAUSE OF THE ENTRY'S INDEX DOESN'T MEAN
-	 * THAT CACHE LOCATION.
-	 *
-	 * SO YOU HAVE TO CHANGE THE
-	 * CACHE_PTR % (CHUNK_SIZE*ENTRY_SIZE)
-	 * THIS IS MORE CORRECT!!!!
-	 */
 	for (i = 1; i < dir->entry_num; i++) {
 		if (dir->entry[i].hot_ratio < coldest &&
 				dir->entry[i].cache_ptr != NULL) {
-			victim_bit = i;
+			victim_entry = i;
 			coldest = dir->entry[i].hot_ratio;
 		}
 	}
-	dir->entry[victim_bit].cache_ptr = NULL;
-	dir->entry[victim_bit].hot_ratio = -1;
+	victim_bit = dir->entry[victim_entry].bit_idx;
+	if(dir->op->write(pblk, &dir->entry[victim_entry]))
+		return -1;
 
 	clear_bit(victim_bit, cache->free_bitmap);
+	dir->entry[victim_entry].cache_ptr = NULL;
+	dir->entry[victim_entry].hot_ratio = -1;
+	dir->entry[victim_entry].bit_idx = 0;
+
 	return victim_bit;
 }
 
@@ -280,7 +274,7 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 
 	if (bit >= PBLK_TRANS_CACHE_SIZE) { /* victim selected */
 		bit = pblk_trans_victim_select(pblk);
-		if(dir->op->write(pblk, &dir->entry[bit]))
+		if (bit == -1)
 			return -EINVAL;
 	}
 
@@ -291,6 +285,8 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	cache_chk = &(cache->trans_map[bit*entry->chk_size*entry_size]);
 	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, entry->chk_size);
 	entry->cache_ptr = cache_chk;
+	entry->bit_idx = bit;
+	entry->hot_ratio = 0;
 	set_bit(bit, cache->free_bitmap);
 
 	trace_printk("===> bit status: %ul", cache->free_bitmap);
