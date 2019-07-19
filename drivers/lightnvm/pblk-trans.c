@@ -89,20 +89,8 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 static void pblk_trans_mem_copy(struct pblk* pblk,
 		unsigned char *dst, unsigned char *src, size_t size)
 {
-	size_t i;
-	if (pblk->addrf_len < 32) {
-		u32 *chk_dst = (u32 *)dst;
-		u32 *chk_src = (u32 *)src;
-		for(i = 0; i < size; i++) {
-			chk_dst[i] = chk_src[i];
-		}
-	} else {
-		struct ppa_addr *chk_dst = (struct ppa_addr *)dst;
-		struct ppa_addr *chk_src = (struct ppa_addr *)src;
-		for(i = 0; i < size; i++) {
-			chk_dst[i] = chk_src[i];
-		}
-	}
+	size_t entry_size = pblk_trans_entry_size_get(pblk);
+	memcpy(dst, src, size * entry_size);
 }
 
 
