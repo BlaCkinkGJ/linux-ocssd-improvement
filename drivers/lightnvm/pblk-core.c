@@ -778,8 +778,6 @@ u64 pblk_line_smeta_start(struct pblk *pblk, struct pblk_line *line)
 	if (bit >= lm->blk_per_line)
 		return -1;
 
-	// Gijun: ws_opt is optimal write size
-	// This just traverse the write position
 	return bit * geo->ws_opt;
 }
 

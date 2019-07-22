@@ -100,8 +100,9 @@ static u32 pblk_l2p_crc(struct pblk *pblk)
 
 static void pblk_l2p_free(struct pblk *pblk)
 {
+#ifndef PBLK_DISABLE_DFTL
 	pblk_trans_free(pblk);
-#ifdef PBLK_DISABLE_D_FTL
+#else
 	vfree(pblk->trans_map);
 #endif
 }
