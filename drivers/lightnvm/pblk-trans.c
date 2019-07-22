@@ -46,14 +46,12 @@ static int pblk_trans_entry_size_get(struct pblk *pblk)
 
 static int pblk_trans_recov_from_mem(struct pblk *pblk)
 {
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
 	struct pblk_trans_dir *dir = &pblk->dir;
 
 	int index = 0;
 
 	sector_t addr = 0;
-	sector_t chk_size = geo->clba;
+	sector_t chk_size = PBLK_TRANS_CHUNK_SIZE;
 	sector_t entry_size = pblk_trans_entry_size_get(pblk);
 
 	do_div(chk_size, entry_size);
@@ -152,55 +150,15 @@ static struct pblk_trans_op trans_op = {
 
 int pblk_trans_init(struct pblk *pblk)
 {
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
-
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	struct pblk_line_meta *lm = &pblk->lm;
-	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
-
-	sector_t entry_size = pblk_trans_entry_size_get(pblk);
-
-	unsigned int nr_chks = lm->blk_per_line * l_mg->nr_lines;
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
-	unsigned int bitmap_size = PBLK_TRANS_CACHE_SIZE;
 
-	/* clba means chunk size*/
-	cache->size = geo->clba * PBLK_TRANS_CACHE_SIZE;
-	cache->trans_map = kzalloc(cache->size, GFP_KERNEL); 
-	if (!cache->trans_map) {
-		cache->size = 0;
-		return -ENOMEM;
-	}
-
-	cache->bucket = kzalloc(geo->clba, GFP_KERNEL);
-	if (!cache->bucket) {
-		return -ENOMEM;
-	}
-
-	/* TODO: optimization needed!!! */
-	do_div(bitmap_size, BITS_PER_BYTE);
-	cache->free_bitmap = kzalloc(bitmap_size + 1, GFP_KERNEL);
-	if (!cache->free_bitmap) {
-		return -ENOMEM;
-	}
-	bitmap_zero(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
-
-	/**
-	 * Why multiplicate entry_size? 
-	 *
-	 * Because of the one chunk has a lot of lba.
-	 * (e.g. 4096 which is same as geo->clba)
-	 * 
-	 * But one chunk can only has chunk size divides by mapping entry size.
-	 * For example, in our cases chunk contains 1048 entries.
-	 *
-	 * For this reason, we have to multiplicate the entry_size in nr_chks
-	 */
-	dir->entry_num = nr_chks * entry_size;
-	dir->entry = kzalloc(dir->entry_num*dir_entry_size, GFP_KERNEL);
+	dir->entry_num = pblk_trans_map_size(pblk);
+	do_div(dir->entry_num, PBLK_TRANS_CHUNK_SIZE);
+	dir->entry_num += 1;
+	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
 	if (!dir->entry) {
 		return -ENOMEM;
 	}
@@ -208,8 +166,29 @@ int pblk_trans_init(struct pblk *pblk)
 
 	/* original l2p table entry mapping */
 	pblk_trans_recov_from_mem(pblk);
-	dir->enable = 1;
 
+	/* cache initialization */
+	cache->size = PBLK_TRANS_CHUNK_SIZE * PBLK_TRANS_CACHE_SIZE;
+	cache->trans_map = vmalloc(cache->size); 
+	if (!cache->trans_map) {
+		cache->size = 0;
+		return -ENOMEM;
+	}
+
+	cache->bucket = vmalloc(PBLK_TRANS_CHUNK_SIZE);
+	if (!cache->bucket) {
+		return -ENOMEM;
+	}
+
+	/* TODO: optimization needed!!! */
+	cache->free_bitmap = vmalloc(dir->entry_num);
+	if (!cache->free_bitmap) {
+		return -ENOMEM;
+	}
+
+	bitmap_zero(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+
+	dir->enable = 1;
 	return 0;
 }
 
@@ -373,9 +352,9 @@ void pblk_trans_free(struct pblk *pblk)
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	kfree(cache->trans_map);
-	kfree(cache->free_bitmap);
-	kfree(dir->entry);
+	vfree(cache->trans_map);
+	vfree(cache->free_bitmap);
+	vfree(dir->entry);
 #ifdef PBLK_TRANS_MEM_TABLE
 	vfree(pblk->trans_map);
 #endif
