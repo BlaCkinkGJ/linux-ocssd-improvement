@@ -348,7 +348,6 @@ static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
 
 		chk[offset] = ppa;
 	}
-	pblk_trans_entry_update(&dir->entry[base]);
 
 	return 0;
 }
