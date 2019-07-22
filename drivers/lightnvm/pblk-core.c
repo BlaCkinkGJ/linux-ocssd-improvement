@@ -805,6 +805,7 @@ static int pblk_line_submit_smeta_io(struct pblk *pblk, struct pblk_line *line,
 	} else
 		return -EINVAL;
 
+	// nvme request
 	memset(&rqd, 0, sizeof(struct nvm_rq));
 
 	rqd.meta_list = nvm_dev_dma_alloc(dev->parent, GFP_KERNEL,

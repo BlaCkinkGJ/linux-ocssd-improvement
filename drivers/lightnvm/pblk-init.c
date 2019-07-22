@@ -76,7 +76,7 @@ static blk_qc_t pblk_make_rq(struct request_queue *q, struct bio *bio)
 	return BLK_QC_T_NONE;
 }
 
-static size_t pblk_trans_map_size(struct pblk *pblk)
+size_t pblk_trans_map_size(struct pblk *pblk)
 {
 	int entry_size = 8;
 
@@ -100,7 +100,11 @@ static u32 pblk_l2p_crc(struct pblk *pblk)
 
 static void pblk_l2p_free(struct pblk *pblk)
 {
+#ifndef PBLK_DISABLE_DFTL
+	pblk_trans_free(pblk);
+#else
 	vfree(pblk->trans_map);
+#endif
 }
 
 static int pblk_l2p_recover(struct pblk *pblk, bool factory_init)
@@ -349,6 +353,8 @@ static int pblk_core_init(struct pblk *pblk)
 	pblk->user_rst_wa = 0;
 	pblk->pad_rst_wa = 0;
 	pblk->gc_rst_wa = 0;
+
+	pblk->dir.enable = 0;
 
 	atomic64_set(&pblk->nr_flush, 0);
 	pblk->nr_flush_rst = 0;
@@ -1238,6 +1244,14 @@ static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,
 		goto fail_stop_writer;
 	}
 
+#ifndef PBLK_DISABLE_D_FTL
+	ret = pblk_trans_init(pblk);
+	if (ret) {
+		pr_err("pblk: could not initialize translation directory\n");
+		goto fail_free_trans;
+	}
+#endif
+
 	/* inherit the size from the underlying device */
 	blk_queue_logical_block_size(tqueue, queue_physical_block_size(bqueue));
 	blk_queue_max_hw_sectors(tqueue, queue_max_hw_sectors(bqueue));
@@ -1262,6 +1276,10 @@ static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,
 
 	return pblk;
 
+#ifndef PBLK_DISABLE_D_FTL
+fail_free_trans:
+	pblk_trans_init(pblk);
+#endif
 fail_stop_writer:
 	pblk_writer_stop(pblk);
 fail_free_l2p:
@@ -1316,5 +1334,6 @@ module_init(pblk_module_init);
 module_exit(pblk_module_exit);
 MODULE_AUTHOR("Javier Gonzalez <javier@cnexlabs.com>");
 MODULE_AUTHOR("Matias Bjorling <matias@cnexlabs.com>");
+MODULE_AUTHOR("O Gijun <kijunking@pusan.ac.kr>");
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Physical Block-Device for Open-Channel SSDs");

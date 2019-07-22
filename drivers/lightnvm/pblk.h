@@ -29,6 +29,8 @@
 #include <linux/crc32.h>
 #include <linux/uuid.h>
 
+#include <asm/div64.h>
+
 #include <linux/lightnvm.h>
 
 /* Run only GC if less than 1/X blocks are free */
@@ -55,6 +57,10 @@
 #define PBLK_GEN_WS_POOL_SIZE (2)
 
 #define PBLK_DEFAULT_OP (11)
+
+/* D-FTL setting */
+#define PBLK_TRANS_CACHE_SIZE (40) /* Cache size */
+#define PBLK_TRANS_MEM_TABLE ;     /* Use memory l2p table */
 
 enum {
 	PBLK_READ		= READ,
@@ -573,6 +579,39 @@ struct pblk_addrf {
 	int sec_ws_stripe;
 };
 
+struct pblk_trans_cache {
+	/* When you use the size then you have to multiply 'entry_size' */
+	size_t size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
+	unsigned char *trans_map; /* compatible type of the mapping table */
+	                          /* (u64 or u32 casting is necessary!) */
+	unsigned char *bucket; /* It is a kind of write buffer */
+	unsigned long *free_bitmap;
+};
+
+struct pblk_trans_entry {
+	int hot_ratio;
+	int line_id;
+	int chk_num;
+	/* When you use the size then you have to multiply 'entry_size' */
+	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
+	unsigned long bit_idx;
+	unsigned char *cache_ptr; /* start location of cache */
+};
+
+struct pblk_trans_op {
+	int (*read) (struct pblk *, struct pblk_trans_entry *);
+	int (*write) (struct pblk *, struct pblk_trans_entry *);
+	int (*erase) (struct pblk *, struct pblk_trans_entry *);
+};
+
+struct pblk_trans_dir {
+	size_t entry_num;
+	int enable; /* Initial recovery successful then this is true */
+	struct pblk_trans_entry *entry;
+	struct pblk_trans_op *op;
+	spinlock_t lock;
+};
+
 struct pblk {
 	struct nvm_tgt_dev *dev;
 	struct gendisk *disk;
@@ -661,6 +700,21 @@ struct pblk {
 	 */
 	unsigned char *trans_map;
 	spinlock_t trans_lock;
+
+	/*
+	 * This is the D-FTL features
+	 * pblk_trans_cache means that 'cached mapping table' and
+	 * pblk_trans_dir means that 'global translation directory'
+	 * 
+	 * However, this is not same as original D-FTL.
+	 * For example, original D-FTL consists global translation directory
+	 * after cached mapping table. But in our cases, global translation directory
+	 * before cached mapping table.
+	 *
+	 * Like this, our D-FTL is some different from original one
+	 */
+	struct pblk_trans_cache cache;
+	struct pblk_trans_dir dir;
 
 	struct list_head compl_list;
 
@@ -895,6 +949,14 @@ void pblk_rl_free_lines_dec(struct pblk_rl *rl, struct pblk_line *line,
 int pblk_rl_is_limit(struct pblk_rl *rl);
 
 /*
+ * pblk trans
+ */
+int pblk_trans_init(struct pblk *pblk);
+struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
+int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
+void pblk_trans_free(struct pblk *pblk);
+size_t pblk_trans_map_size(struct pblk *pblk);
+/*
  * pblk sysfs
  */
 int pblk_sysfs_init(struct gendisk *tdisk);
@@ -1124,6 +1186,11 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 {
 	struct ppa_addr ppa;
 
+#ifndef PBLK_DISABLE_D_FTL
+	if (pblk->dir.enable)
+		return pblk_trans_l2p_map_get(pblk, lba);
+#endif
+
 	if (pblk->addrf_len < 32) {
 		u32 *map = (u32 *)pblk->trans_map;
 
@@ -1140,6 +1207,13 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
+#ifndef PBLK_DISABLE_D_FTL
+	if (pblk->dir.enable) {
+		pblk_trans_l2p_map_set(pblk, lba, ppa);
+		return ;
+	}
+#endif
+
 	if (pblk->addrf_len < 32) {
 		u32 *map = (u32 *)pblk->trans_map;
 
