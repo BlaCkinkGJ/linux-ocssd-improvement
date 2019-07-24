@@ -145,25 +145,12 @@ static int pblk_l2p_init(struct pblk *pblk, bool factory_init)
 {
 	sector_t i;
 	struct ppa_addr ppa;
-	size_t map_size;
+	size_t map_size = 0;
 
 	map_size = pblk_trans_map_size(pblk);
 
 #ifndef PBLK_DISABLE_D_FTL
-	{
-		size_t remain, quotient = map_size;
-		size_t calib_ratio = PBLK_TRANS_CALIB_RATIO;
-
-		remain = do_div(quotient, PBLK_TRANS_CHUNK_SIZE);
-		/***
-		 * DO NOT REMOVE THE `calib_ratio`!!
-		 * I don't know why this is necessary.
-		 *
-		 * Unfortunately, if it doesn't exist
-		 * then kernel occurs kernel panic.
-		 */
-		map_size = map_size + remain*calib_ratio;
-	}
+	map_size += PBLK_TRANS_CHUNK_SIZE;
 #endif
 
 	pblk->trans_map = vmalloc(map_size);
