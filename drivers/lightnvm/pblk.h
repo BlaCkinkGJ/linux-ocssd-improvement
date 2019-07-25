@@ -64,7 +64,6 @@
 	(pblk->dev->geo.clba * pblk->dev->geo.csecs)
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
-#define PBLK_TRANS_CALIB_RATIO (2) /* For trans_map alloc */ 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
 #define PBLK_TRANS_CACHE_SIZE (2) /* Cache size */
 #define PBLK_TRANS_MEM_TABLE ;     /* Use memory l2p table */
