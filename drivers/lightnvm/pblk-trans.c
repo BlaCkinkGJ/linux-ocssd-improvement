@@ -198,6 +198,19 @@ static void pblk_trans_entry_update (struct pblk_trans_entry *entry)
 	/* entry->hot_ratio += 1; */
 }
 
+static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
+	struct pblk_trans_dir *dir = &pblk->dir;
+
+	sector_t base = lba;
+	sector_t offset; 
+	void *ptr;
+
+	offset = do_div(base, dir->entry[0].chk_size);
+	ptr = dir->entry[base].cache_ptr;
+
+	return ptr != NULL;
+}
+
 static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk, 
 		sector_t lba)
 {
@@ -209,7 +222,7 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 	void *ptr;
 
 	offset = do_div(base, dir->entry[0].chk_size);
-	ppa.ppa = 0;
+	pblk_ppa_set_empty(&ppa);
 	ptr = dir->entry[base].cache_ptr;
 
 	if (ptr == NULL) /* cache miss */
@@ -292,15 +305,14 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 
 struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 {
-	struct ppa_addr ppa = pblk_trans_ppa_get(pblk, lba);
-
-	if (!ppa.ppa) { /* cache miss */
+	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache hit */
 		if (pblk_trans_update_cache (pblk, lba)) {
-			return ppa; /* error occured */
+			struct ppa_addr err;
+			pblk_ppa_set_empty(&err);
+			return err;
 		}
-		ppa = pblk_trans_ppa_get(pblk, lba);
 	}
-	return ppa;
+	return pblk_trans_ppa_get(pblk, lba);
 }
 
 static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
@@ -336,9 +348,7 @@ static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 		struct ppa_addr ppa)
 {
-	struct ppa_addr cached_ppa = pblk_trans_ppa_get(pblk, lba);
-
-	if (!cached_ppa.ppa) { /* cache miss */
+	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache miss */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			return -EINVAL;
 		}
