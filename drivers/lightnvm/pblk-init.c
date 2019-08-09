@@ -847,6 +847,7 @@ static int pblk_line_mg_init(struct pblk *pblk)
 
 	l_mg->nr_lines = geo->num_chk;
 	l_mg->log_line = l_mg->data_line = NULL;
+	l_mg->trans_line = NULL;
 	l_mg->l_seq_nr = l_mg->d_seq_nr = 0;
 	l_mg->nr_free_lines = 0;
 	bitmap_zero(&l_mg->meta_bitmap, PBLK_DATA_LINES);

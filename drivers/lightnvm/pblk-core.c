@@ -1345,6 +1345,62 @@ static void pblk_set_space_limit(struct pblk *pblk)
 	atomic_set(&rl->rb_space, 0);
 }
 
+struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk)
+{
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct pblk_line *line;
+
+	spin_lock(&l_mg->free_lock);
+	line = pblk_line_get(pblk);
+	if (!line) {
+		spin_unlock(&l_mg->free_lock);
+		return NULL;
+	}
+
+	line->seq_nr = l_mg->t_seq_nr++;
+	line->type = PBLK_LINETYPE_TRANS;
+	l_mg->trans_line = line;
+
+	pblk_line_setup_metadata(line, l_mg, &pblk->lm);
+
+	l_mg->trans_next = pblk_line_get(pblk);
+	if (!l_mg->trans_next) {
+		pblk_set_space_limit(pblk);
+		l_mg->trans_next = NULL;
+	} else {
+		l_mg->trans_next->seq_nr = l_mg->t_seq_nr++;
+		l_mg->trans_next->type = PBLK_LINETYPE_TRANS;
+	}
+	spin_unlock(&l_mg->free_lock);
+
+	if (pblk_line_erase(pblk, line)) {
+		line = pblk_line_retry(pblk, line);
+		if (!line)
+			return NULL;
+	}
+
+retry_setup:
+	if (!pblk_line_init_metadata(pblk, line, NULL)) {
+		line = pblk_line_retry(pblk, line);
+		if (!line)
+			return NULL;
+
+		goto retry_setup;
+	}
+
+	if (!pblk_line_init_bb(pblk, line, 1)) {
+		line = pblk_line_retry(pblk, line);
+		if (!line)
+			return NULL;
+
+		goto retry_setup;
+	}
+
+	pblk_rl_free_lines_dec(&pblk->rl, line, true);
+
+	return line;
+}
+
 struct pblk_line *pblk_line_get_first_data(struct pblk *pblk)
 {
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
@@ -1480,7 +1536,77 @@ void pblk_pipeline_stop(struct pblk *pblk)
 	pblk->state = PBLK_STATE_STOPPED;
 	l_mg->data_line = NULL;
 	l_mg->data_next = NULL;
+	l_mg->trans_line = NULL;
+	l_mg->trans_next = NULL;
 	spin_unlock(&l_mg->free_lock);
+}
+
+struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
+{
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct pblk_line *cur, *new = NULL;
+	unsigned int left_seblks;
+
+	cur = l_mg->trans_line;
+	new = l_mg->trans_next;
+	if (!new)
+		goto out;
+	l_mg->trans_line = new;
+
+	spin_lock(&l_mg->free_lock);
+	pblk_line_setup_metadata(new, l_mg, &pblk->lm);
+	spin_unlock(&l_mg->free_lock);
+
+retry_erase:
+	left_seblks = atomic_read(&new->left_seblks);
+	if (left_seblks) {
+		/* If line is not fully erased, erase it */
+		if (atomic_read(&new->left_eblks)) {
+			if (pblk_line_erase(pblk, new))
+				goto out;
+		} else {
+			io_schedule();
+		}
+		goto retry_erase;
+	}
+
+retry_setup:
+	if (!pblk_line_init_metadata(pblk, new, cur)) {
+		new = pblk_line_retry(pblk, new);
+		if (!new)
+			goto out;
+
+		goto retry_setup;
+	}
+
+	if (!pblk_line_init_bb(pblk, new, 1)) {
+		new = pblk_line_retry(pblk, new);
+		if (!new)
+			goto out;
+
+		goto retry_setup;
+	}
+
+	pblk_rl_free_lines_dec(&pblk->rl, new, true);
+
+	/* Allocate next line for preparation */
+	spin_lock(&l_mg->free_lock);
+	l_mg->trans_next = pblk_line_get(pblk);
+	if (!l_mg->trans_next) {
+		/* If we cannot get a new line, we need to stop the pipeline.
+		 * Only allow as many writes in as we can store safely and then
+		 * fail gracefully
+		 */
+		pblk_stop_writes(pblk, new);
+		l_mg->trans_next = NULL;
+	} else {
+		l_mg->trans_next->seq_nr = l_mg->d_seq_nr++;
+		l_mg->trans_next->type = PBLK_LINETYPE_DATA;
+	}
+	spin_unlock(&l_mg->free_lock);
+
+out:
+	return new;
 }
 
 struct pblk_line *pblk_line_replace_data(struct pblk *pblk)

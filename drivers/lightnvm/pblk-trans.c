@@ -111,12 +111,14 @@ static int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	sector_t offset = 0; 
 	void *map_ptr = NULL; 
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 
 	/* only used in memory simulator. DON'T USE IN SSD */
 	static int memory_index = 0;
 	int index = entry->chk_num;
 	/* only used in memory simulator. DON'T USE IN SSD */
 
+	trace_printk("trans line id: %u\n", l_mg->trans_line->id);
 	if (entry->cache_ptr == NULL)
 		return -EINVAL;
 
@@ -152,8 +154,15 @@ int pblk_trans_init(struct pblk *pblk)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
+
+	struct pblk_line *line = pblk_line_get_first_trans(pblk);
+	trace_printk("trans line id: %u\n", l_mg->trans_line->id);
+	trace_printk("local line id: %u\n", line->id);
+	trace_printk("line_type: %d\n", line->type);
+	trace_printk("blk_in_line: %d\n", atomic_read(&line->blk_in_line));
 
 	dir->entry_num = pblk_trans_map_size(pblk);
 	do_div(dir->entry_num, PBLK_TRANS_CHUNK_SIZE);

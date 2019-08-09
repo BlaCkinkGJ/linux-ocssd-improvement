@@ -307,6 +307,7 @@ enum {
 	PBLK_LINETYPE_FREE = 0,
 	PBLK_LINETYPE_LOG = 1,
 	PBLK_LINETYPE_DATA = 2,
+	PBLK_LINETYPE_TRANS = 4,
 
 	/* Line state */
 	PBLK_LINESTATE_NEW = 9,
@@ -506,8 +507,10 @@ struct pblk_line_mgmt {
 
 	struct pblk_line *log_line;	/* Current FTL log line */
 	struct pblk_line *data_line;	/* Current data line */
+	struct pblk_line *trans_line; /* Current Trans Line */
 	struct pblk_line *log_next;	/* Next FTL log line */
 	struct pblk_line *data_next;	/* Next data line */
+	struct pblk_line *trans_next; /*Next trans line*/
 
 	struct list_head emeta_list;	/* Lines queued to schedule emeta */
 
@@ -527,6 +530,7 @@ struct pblk_line_mgmt {
 
 	unsigned long d_seq_nr;		/* Data line unique sequence number */
 	unsigned long l_seq_nr;		/* Log line unique sequence number */
+	unsigned long t_seq_nr;     /* Trans line unique sequence number */
 
 	spinlock_t free_lock;
 	spinlock_t close_lock;
@@ -819,6 +823,7 @@ struct bio *pblk_bio_map_addr(struct pblk *pblk, void *data,
 			      int alloc_type, gfp_t gfp_mask);
 struct pblk_line *pblk_line_get(struct pblk *pblk);
 struct pblk_line *pblk_line_get_first_data(struct pblk *pblk);
+struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk);
 struct pblk_line *pblk_line_replace_data(struct pblk *pblk);
 int pblk_line_recov_alloc(struct pblk *pblk, struct pblk_line *line);
 void pblk_line_recov_close(struct pblk *pblk, struct pblk_line *line);
