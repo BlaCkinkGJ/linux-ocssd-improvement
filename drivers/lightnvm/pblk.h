@@ -67,6 +67,7 @@
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
 #define PBLK_TRANS_CACHE_SIZE (2) /* Cache size */
 #define PBLK_TRANS_MEM_TABLE ;     /* Use memory l2p table */
+#define PBLK_TRANS_SSD_TABLE ;
 
 enum {
 	PBLK_READ		= READ,
@@ -602,6 +603,7 @@ struct pblk_trans_entry {
 	int hot_ratio;
 	int line_id;
 	int chk_num;
+	u64 paddr; /* TODO: this must be changed to chk_num!!! */
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	unsigned long bit_idx;
