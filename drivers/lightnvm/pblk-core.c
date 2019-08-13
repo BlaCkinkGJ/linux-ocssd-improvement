@@ -1600,8 +1600,8 @@ retry_setup:
 		pblk_stop_writes(pblk, new);
 		l_mg->trans_next = NULL;
 	} else {
-		l_mg->trans_next->seq_nr = l_mg->d_seq_nr++;
-		l_mg->trans_next->type = PBLK_LINETYPE_DATA;
+		l_mg->trans_next->seq_nr = l_mg->t_seq_nr++;
+		l_mg->trans_next->type = PBLK_LINETYPE_TRANS;
 	}
 	spin_unlock(&l_mg->free_lock);
 

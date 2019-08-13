@@ -66,8 +66,7 @@
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
 #define PBLK_TRANS_CACHE_SIZE (2) /* Cache size */
-#define PBLK_TRANS_MEM_TABLE ;     /* Use memory l2p table */
-#define PBLK_TRANS_SSD_TABLE ;
+//#define PBLK_TRANS_DEBUG
 
 enum {
 	PBLK_READ		= READ,
@@ -601,9 +600,8 @@ struct pblk_trans_cache {
 
 struct pblk_trans_entry {
 	int hot_ratio;
-	int line_id;
-	int chk_num;
-	u64 paddr; /* TODO: this must be changed to chk_num!!! */
+	struct pblk_line *line;
+	u64 paddr;
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	unsigned long bit_idx;
@@ -827,6 +825,7 @@ struct pblk_line *pblk_line_get(struct pblk *pblk);
 struct pblk_line *pblk_line_get_first_data(struct pblk *pblk);
 struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk);
 struct pblk_line *pblk_line_replace_data(struct pblk *pblk);
+struct pblk_line *pblk_line_replace_trans(struct pblk *pblk);
 int pblk_line_recov_alloc(struct pblk *pblk, struct pblk_line *line);
 void pblk_line_recov_close(struct pblk *pblk, struct pblk_line *line);
 struct pblk_line *pblk_line_get_data(struct pblk *pblk);
@@ -962,13 +961,26 @@ void pblk_rl_free_lines_dec(struct pblk_rl *rl, struct pblk_line *line,
 int pblk_rl_is_limit(struct pblk_rl *rl);
 
 /*
- * pblk trans
+ * pblk trans core
  */
 int pblk_trans_init(struct pblk *pblk);
 struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
 void pblk_trans_free(struct pblk *pblk);
 size_t pblk_trans_map_size(struct pblk *pblk);
+void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src, 
+		size_t size);
+void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset);
+/*
+ * pblk trans io
+ */
+
+int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir);
+int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry);
+int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
+int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry);
+int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
+
 /*
  * pblk sysfs
  */
