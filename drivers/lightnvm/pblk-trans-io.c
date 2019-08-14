@@ -180,15 +180,39 @@ int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct pblk_trans_cache *cache = &pblk->cache;
 	int ret;
 
-	trace_printk("do read!!\n");
-
 	if (entry->line == NULL || entry->paddr == ADDR_EMPTY) {
 		return -EINVAL;
 	}
 	entry->cache_ptr = cache->bucket;
+	trace_printk("entry read  %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_READ);
 	entry->cache_ptr = NULL;
 	
+	return ret;
+}
+
+static int ocssd_l2p_gc(struct pblk *pblk, struct pblk_line *line)
+{
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+
+	int ret;
+	ret = pblk_line_erase(pblk, line);
+	trace_printk("result of line erase ==> %d\n", ret);
+
+	spin_lock(&line->lock);
+	WARN_ON(line->state != PBLK_LINESTATE_GC);
+	line->state = PBLK_LINESTATE_FREE;
+	line->gc_group = PBLK_LINEGC_NONE;
+	pblk_line_free(pblk, line);
+	spin_unlock(&line->lock);
+
+	spin_lock(&l_mg->free_lock);
+	list_add_tail(&line->list, &l_mg->free_list);
+	l_mg->nr_free_lines++;
+	spin_unlock(&l_mg->free_lock);
+
+	pblk_rl_free_lines_inc(&pblk->rl, line);
+
 	return ret;
 }
 
@@ -197,38 +221,41 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
 
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+
 	int ret;
 	int nr_secs = geo->clba;
 	
 	u64 paddr = entry->paddr;
-	struct pblk_line *line = entry->line;
+	struct pblk_line *tmp, *line = entry->line;
 	unsigned int id = line->id;
 
 	if (entry->cache_ptr == NULL)
 		return -EINVAL;
 
-	if (entry->paddr != ADDR_EMPTY) {
-		struct ppa_addr ppa = addr_to_gen_ppa(pblk, paddr, id);
-		int pos = pblk_ppa_to_pos(geo, ppa);
-		trace_printk("kicked!!!!\n");
-		spin_lock(&line->lock);
-		if (!test_bit(pos, line->erase_bitmap)) {
-			set_bit(pos, line->erase_bitmap);
-			atomic_dec(&line->left_eblks);
+	if (paddr != ADDR_EMPTY)
+		atomic_inc(&line->trans_gc_value);
+
+	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line)
+		entry->line = pblk_line_replace_trans(pblk);
+
+	/*
+	 * This runs correctly. Unfortunately, this policy
+	 * doesn't correct. So, if you run the real data.
+	 */
+	list_for_each_entry(tmp, &l_mg->victim_list, list) {
+		unsigned int trans_gc_value = atomic_read(&tmp->trans_gc_value);
+		unsigned int blk_in_line = atomic_read(&tmp->blk_in_line);
+		printk("DO GC? %u / %u", trans_gc_value, blk_in_line);
+		if ((trans_gc_value + 1) >= blk_in_line) {
+			// GC FAILED...
+			ocssd_l2p_gc(pblk, tmp);
+			break;
 		}
-		spin_unlock(&line->lock);
 	}
 
-	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line) {
-		struct pblk_line *prev_line = entry->line;
-		trace_printk("move to next line...\n");
-
-		line = pblk_line_replace_trans(pblk);
-		pblk_line_close_meta(pblk, prev_line);
-		entry->line = line;
-	}
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
-	trace_printk("entry %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
+	trace_printk("entry write %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
 	return ret;
 }
 

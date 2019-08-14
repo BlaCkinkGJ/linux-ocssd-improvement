@@ -860,6 +860,7 @@ static int pblk_line_mg_init(struct pblk *pblk)
 	INIT_LIST_HEAD(&l_mg->gc_mid_list);
 	INIT_LIST_HEAD(&l_mg->gc_low_list);
 	INIT_LIST_HEAD(&l_mg->gc_empty_list);
+	INIT_LIST_HEAD(&l_mg->victim_list);
 
 	INIT_LIST_HEAD(&l_mg->emeta_list);
 

@@ -243,9 +243,7 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 
 	bit = find_first_zero_bit(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 
-	trace_printk("bit ==> %d\n", bit);
 	if (bit >= PBLK_TRANS_CACHE_SIZE) { /* victim selected */
-		trace_printk("victim selected!\n");
 		bit = pblk_trans_victim_select(pblk);
 		if (bit == -1)
 			return -EINVAL;
@@ -260,7 +258,6 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	entry->bit_idx = bit;
 	entry->hot_ratio = 0;
 	set_bit(bit, cache->free_bitmap);
-	trace_printk("trans cache %lu: (%p, %llu)\n", base, entry->line ,entry->paddr);
 
 	return 0;
 }

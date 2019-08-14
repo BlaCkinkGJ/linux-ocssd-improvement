@@ -1216,6 +1216,7 @@ static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)
 
 	atomic_set(&line->left_eblks, blk_to_erase);
 	atomic_set(&line->left_seblks, blk_to_erase);
+	atomic_set(&line->trans_gc_value, 0);
 
 	line->meta_distance = lm->meta_distance;
 	spin_unlock(&line->lock);
@@ -1307,6 +1308,37 @@ retry:
 	return line;
 }
 
+static struct pblk_line *pblk_line_trans_retry(struct pblk *pblk,
+					 struct pblk_line *line)
+{
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct pblk_line *retry_line;
+
+retry:
+	spin_lock(&l_mg->free_lock);
+	retry_line = pblk_line_get(pblk);
+	if (!retry_line) {
+		l_mg->data_line = NULL;
+		spin_unlock(&l_mg->free_lock);
+		return NULL;
+	}
+
+	retry_line->smeta = line->smeta;
+	retry_line->emeta = line->emeta;
+	retry_line->meta_line = line->meta_line;
+
+	pblk_line_free(pblk, line);
+	l_mg->trans_line = retry_line;
+	spin_unlock(&l_mg->free_lock);
+
+	pblk_rl_free_lines_dec(&pblk->rl, line, false);
+
+	if (pblk_line_erase(pblk, retry_line))
+		goto retry;
+
+	return retry_line;
+}
+
 static struct pblk_line *pblk_line_retry(struct pblk *pblk,
 					 struct pblk_line *line)
 {
@@ -1374,7 +1406,7 @@ struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk)
 	spin_unlock(&l_mg->free_lock);
 
 	if (pblk_line_erase(pblk, line)) {
-		line = pblk_line_retry(pblk, line);
+		line = pblk_line_trans_retry(pblk, line);
 		if (!line)
 			return NULL;
 	}
@@ -1544,14 +1576,25 @@ void pblk_pipeline_stop(struct pblk *pblk)
 struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
 {
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
-	struct pblk_line *cur, *new = NULL;
+	struct pblk_line *cur, *new, *line;
 	unsigned int left_seblks;
+	int is_add_tail = 1;
 
 	cur = l_mg->trans_line;
 	new = l_mg->trans_next;
 	if (!new)
 		goto out;
 	l_mg->trans_line = new;
+
+	list_for_each_entry(line, &l_mg->victim_list, list) {
+		if (line->id == cur->id) {
+			is_add_tail = 0;
+			break;
+		}
+	}
+
+	if (is_add_tail)
+		list_add_tail(&cur->list, &l_mg->victim_list);
 
 	spin_lock(&l_mg->free_lock);
 	pblk_line_setup_metadata(new, l_mg, &pblk->lm);
@@ -1572,7 +1615,7 @@ retry_erase:
 
 retry_setup:
 	if (!pblk_line_init_metadata(pblk, new, cur)) {
-		new = pblk_line_retry(pblk, new);
+		new = pblk_line_trans_retry(pblk, new);
 		if (!new)
 			goto out;
 
@@ -1580,7 +1623,7 @@ retry_setup:
 	}
 
 	if (!pblk_line_init_bb(pblk, new, 1)) {
-		new = pblk_line_retry(pblk, new);
+		new = pblk_line_trans_retry(pblk, new);
 		if (!new)
 			goto out;
 

@@ -463,6 +463,8 @@ struct pblk_line {
 	atomic_t left_eblks;		/* Blocks left for erasing */
 	atomic_t left_seblks;		/* Blocks left for sync erasing */
 
+	atomic_t trans_gc_value; /* translation block gc value check */
+
 	int left_msecs;			/* Sectors left for mapping */
 	unsigned int cur_sec;		/* Sector map pointer */
 	unsigned int nr_valid_lbas;	/* Number of valid lbas in line */
@@ -474,7 +476,8 @@ struct pblk_line {
 	spinlock_t lock;		/* Necessary for invalid_bitmap only */
 };
 
-#define PBLK_DATA_LINES 4
+#define PBLK_DATA_LINES 20 // include the trans lines
+#define PBLK_TRANS_LINES 3
 
 enum {
 	PBLK_KMALLOC_META = 1,
@@ -510,9 +513,10 @@ struct pblk_line_mgmt {
 	struct pblk_line *trans_line; /* Current Trans Line */
 	struct pblk_line *log_next;	/* Next FTL log line */
 	struct pblk_line *data_next;	/* Next data line */
-	struct pblk_line *trans_next; /*Next trans line*/
+	struct pblk_line *trans_next; /* Next trans line */
 
 	struct list_head emeta_list;	/* Lines queued to schedule emeta */
+	struct list_head victim_list; /* List for victim lines */
 
 	__le32 *vsc_list;		/* Valid sector counts for all lines */
 
@@ -533,6 +537,7 @@ struct pblk_line_mgmt {
 	unsigned long t_seq_nr;     /* Trans line unique sequence number */
 
 	spinlock_t free_lock;
+	spinlock_t trans_lock;
 	spinlock_t close_lock;
 	spinlock_t gc_lock;
 };
