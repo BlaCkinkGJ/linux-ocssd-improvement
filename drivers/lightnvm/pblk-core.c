@@ -1585,7 +1585,7 @@ struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
 	if (!new)
 		goto out;
 	l_mg->trans_line = new;
-
+/*
 	list_for_each_entry(line, &l_mg->victim_list, list) {
 		if (line->id == cur->id) {
 			is_add_tail = 0;

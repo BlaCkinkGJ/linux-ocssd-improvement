@@ -191,29 +191,22 @@ int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 	return ret;
 }
 
-static int ocssd_l2p_gc(struct pblk *pblk, struct pblk_line *line)
+static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
-	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+	struct pblk_line *line = entry->line;
+	u64 paddr = entry->paddr;
+	u64 cur = paddr;
 
-	int ret;
-	ret = pblk_line_erase(pblk, line);
-	trace_printk("result of line erase ==> %d\n", ret);
+	for(;cur < paddr + geo->clba; cur++) {
+		__pblk_map_invalidate(pblk, line, cur);
+	}
 
-	spin_lock(&line->lock);
-	WARN_ON(line->state != PBLK_LINESTATE_GC);
-	line->state = PBLK_LINESTATE_FREE;
-	line->gc_group = PBLK_LINEGC_NONE;
-	pblk_line_free(pblk, line);
-	spin_unlock(&line->lock);
-
-	spin_lock(&l_mg->free_lock);
-	list_add_tail(&line->list, &l_mg->free_list);
-	l_mg->nr_free_lines++;
-	spin_unlock(&l_mg->free_lock);
-
-	pblk_rl_free_lines_inc(&pblk->rl, line);
-
-	return ret;
+	/*
+	 * I think that we have to use the close function
+	 * `pblk_line_close(pblk, line);`
+	 */
 }
 
 int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
@@ -221,38 +214,22 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
 
-	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
-
 	int ret;
 	int nr_secs = geo->clba;
 	
 	u64 paddr = entry->paddr;
-	struct pblk_line *tmp, *line = entry->line;
-	unsigned int id = line->id;
+	struct pblk_line *line = entry->line;
 
 	if (entry->cache_ptr == NULL)
 		return -EINVAL;
 
-	if (paddr != ADDR_EMPTY)
-		atomic_inc(&line->trans_gc_value);
+	if (paddr != ADDR_EMPTY) {
+		ocssd_l2p_invalidate(pblk, entry);
+		paddr = ADDR_EMPTY;
+	}
 
 	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line)
 		entry->line = pblk_line_replace_trans(pblk);
-
-	/*
-	 * This runs correctly. Unfortunately, this policy
-	 * doesn't correct. So, if you run the real data.
-	 */
-	list_for_each_entry(tmp, &l_mg->victim_list, list) {
-		unsigned int trans_gc_value = atomic_read(&tmp->trans_gc_value);
-		unsigned int blk_in_line = atomic_read(&tmp->blk_in_line);
-		printk("DO GC? %u / %u", trans_gc_value, blk_in_line);
-		if ((trans_gc_value + 1) >= blk_in_line) {
-			// GC FAILED...
-			ocssd_l2p_gc(pblk, tmp);
-			break;
-		}
-	}
 
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
 	trace_printk("entry write %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
