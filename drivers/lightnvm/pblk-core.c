@@ -1586,6 +1586,7 @@ struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
 		goto out;
 	l_mg->trans_line = new;
 /*
+    // victim list management system
 	list_for_each_entry(line, &l_mg->victim_list, list) {
 		if (line->id == cur->id) {
 			is_add_tail = 0;
@@ -1595,6 +1596,7 @@ struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
 
 	if (is_add_tail)
 		list_add_tail(&cur->list, &l_mg->victim_list);
+*/
 
 	spin_lock(&l_mg->free_lock);
 	pblk_line_setup_metadata(new, l_mg, &pblk->lm);

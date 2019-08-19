@@ -191,18 +191,32 @@ int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 	return ret;
 }
 
-static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entry)
+static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 paddr)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
-	struct pblk_line *line = entry->line;
-	u64 paddr = entry->paddr;
+	struct pblk_line_meta *lm = &pblk->lm;
 	u64 cur = paddr;
+	int weight, bench = lm->sec_per_line;
 
 	for(;cur < paddr + geo->clba; cur++) {
 		__pblk_map_invalidate(pblk, line, cur);
 	}
 
+	weight = bitmap_weight(line->invalid_bitmap, lm->sec_per_line);
+
+	do_div(bench, geo->clba); /* Doesn't work... */
+	bench -= 1;
+	bench *= geo->clba;
+
+	trace_printk("weight/bench(line sectors): %d/%d(%d)\n", weight, bench, lm->sec_per_line);
+	if (weight > bench) { // error occured.... why????
+		for(;cur < lm->sec_per_line; cur++) {
+			__pblk_map_invalidate(pblk, line, cur);
+		}
+		trace_printk("line close\n");
+		pblk_line_close(pblk, line);
+	}
 	/*
 	 * I think that we have to use the close function
 	 * `pblk_line_close(pblk, line);`
@@ -223,16 +237,17 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	if (entry->cache_ptr == NULL)
 		return -EINVAL;
 
-	if (paddr != ADDR_EMPTY) {
-		ocssd_l2p_invalidate(pblk, entry);
-		paddr = ADDR_EMPTY;
-	}
-
 	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line)
 		entry->line = pblk_line_replace_trans(pblk);
 
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
 	trace_printk("entry write %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
+
+	if (paddr != ADDR_EMPTY) {
+		ocssd_l2p_invalidate(pblk, line, paddr);
+		paddr = ADDR_EMPTY;
+	}
+
 	return ret;
 }
 
