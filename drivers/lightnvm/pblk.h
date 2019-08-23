@@ -65,7 +65,7 @@
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (2) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (5) /* Cache size */
 //#define PBLK_TRANS_DEBUG
 
 enum {
@@ -476,8 +476,8 @@ struct pblk_line {
 	spinlock_t lock;		/* Necessary for invalid_bitmap only */
 };
 
-#define PBLK_DATA_LINES 20 // include the trans lines
-#define PBLK_TRANS_LINES 3
+#define PBLK_DATA_LINES 10 // always bigger than trans lines
+#define PBLK_TRANS_LINES 5
 
 enum {
 	PBLK_KMALLOC_META = 1,
@@ -624,7 +624,7 @@ struct pblk_trans_dir {
 	int enable; /* Initial recovery successful then this is true */
 	struct pblk_trans_entry *entry;
 	struct pblk_trans_op *op;
-	spinlock_t lock;
+	struct rw_semaphore dir_sem;
 };
 
 struct pblk {
@@ -968,6 +968,8 @@ int pblk_rl_is_limit(struct pblk_rl *rl);
 /*
  * pblk trans core
  */
+
+#define PBLK_TRANS_IO_QD 128
 int pblk_trans_init(struct pblk *pblk);
 struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);

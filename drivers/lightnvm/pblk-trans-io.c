@@ -178,19 +178,25 @@ free_rqd_dma:
 int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
+	struct pblk_trans_dir *dir = &pblk->dir;
 	int ret;
 
 	if (entry->line == NULL || entry->paddr == ADDR_EMPTY) {
 		return -EINVAL;
 	}
+	down_read(&dir->dir_sem);
 	entry->cache_ptr = cache->bucket;
-	trace_printk("entry read  %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_READ);
 	entry->cache_ptr = NULL;
+	up_read(&dir->dir_sem);
 	
 	return ret;
 }
 
+/**
+ * I think invalidate speed may occur the problem. 
+ * So, how about make the ocssd_l2p_invalidate kernel thread?
+ */
 static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 paddr)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
@@ -209,24 +215,25 @@ static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 
 	bench -= 1;
 	bench *= geo->clba;
 
-	trace_printk("weight/bench(line sectors): %d/%d(%d)\n", weight, bench, lm->sec_per_line);
+	/*
+	 * free line can be made by below function.
+	 * I think lock contentiobn occured
+	 */
 	if (weight > bench) { // error occured.... why????
 		for(;cur < lm->sec_per_line; cur++) {
 			__pblk_map_invalidate(pblk, line, cur);
 		}
-		trace_printk("line close\n");
+		bitmap_copy(line->map_bitmap, line->invalid_bitmap, lm->sec_per_line);
 		pblk_line_close(pblk, line);
+		pblk_gc_should_start(pblk);
 	}
-	/*
-	 * I think that we have to use the close function
-	 * `pblk_line_close(pblk, line);`
-	 */
 }
 
 int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
+	struct pblk_trans_dir *dir = &pblk->dir;
 
 	int ret;
 	int nr_secs = geo->clba;
@@ -234,19 +241,18 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	u64 paddr = entry->paddr;
 	struct pblk_line *line = entry->line;
 
-	if (entry->cache_ptr == NULL)
+	if (entry->cache_ptr == NULL || line == NULL)
 		return -EINVAL;
 
+	down_write(&dir->dir_sem);
 	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line)
 		entry->line = pblk_line_replace_trans(pblk);
 
-	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
-	trace_printk("entry write %p: (%p, %llu)\n",entry, entry->line, entry->paddr);
-
-	if (paddr != ADDR_EMPTY) {
+	if (paddr != ADDR_EMPTY) 
 		ocssd_l2p_invalidate(pblk, line, paddr);
-		paddr = ADDR_EMPTY;
-	}
+
+	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
+	up_write(&dir->dir_sem);
 
 	return ret;
 }

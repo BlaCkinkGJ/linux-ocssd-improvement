@@ -169,9 +169,9 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 	struct pblk_line *line;
 	ssize_t sz = 0;
 	int nr_free_lines;
-	int cur_data, cur_log;
+	int cur_data, cur_log, cur_trans;
 	int free_line_cnt = 0, closed_line_cnt = 0, emeta_line_cnt = 0;
-	int d_line_cnt = 0, l_line_cnt = 0;
+	int d_line_cnt = 0, l_line_cnt = 0, t_line_cnt = 0;
 	int gc_full = 0, gc_high = 0, gc_mid = 0, gc_low = 0, gc_empty = 0;
 	int bad = 0, cor = 0;
 	int msecs = 0, cur_sec = 0, vsc = 0, sec_in_line = 0;
@@ -180,6 +180,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 	spin_lock(&l_mg->free_lock);
 	cur_data = (l_mg->data_line) ? l_mg->data_line->id : -1;
 	cur_log = (l_mg->log_line) ? l_mg->log_line->id : -1;
+	cur_trans = (l_mg->trans_line) ? l_mg->trans_line->id : -1;
 	nr_free_lines = l_mg->nr_free_lines;
 
 	list_for_each_entry(line, &l_mg->free_list, list)
@@ -197,6 +198,8 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
 			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
 		closed_line_cnt++;
 		gc_full++;
 	}
@@ -206,6 +209,8 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
 			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
 		closed_line_cnt++;
 		gc_high++;
 	}
@@ -215,6 +220,8 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
 			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
 		closed_line_cnt++;
 		gc_mid++;
 	}
@@ -224,6 +231,8 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
 			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
 		closed_line_cnt++;
 		gc_low++;
 	}
@@ -233,6 +242,8 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
 			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
 		closed_line_cnt++;
 		gc_empty++;
 	}
@@ -265,13 +276,13 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		geo->all_luns, lm->blk_per_line, lm->sec_per_line);
 
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-		"lines:d:%d,l:%d-f:%d,m:%d/%d,c:%d,b:%d,co:%d(d:%d,l:%d)t:%d\n",
-					cur_data, cur_log,
+		"lines:d:%d,l:%d,t:%d-f:%d,m:%d/%d,c:%d,b:%d,co:%d(d:%d,l:%d,t:%d)t:%d\n",
+					cur_data, cur_log, cur_trans,
 					nr_free_lines,
 					emeta_line_cnt, meta_weight,
 					closed_line_cnt,
 					bad, cor,
-					d_line_cnt, l_line_cnt,
+					d_line_cnt, l_line_cnt, t_line_cnt,
 					l_mg->nr_lines);
 
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
@@ -285,6 +296,23 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			map_weight, lm->sec_per_line,
 			atomic_read(&pblk->inflight_io));
 
+	spin_lock(&l_mg->free_lock);
+	if (l_mg->trans_line) {
+		cur_sec = l_mg->trans_line->cur_sec;
+		msecs = l_mg->trans_line->left_msecs;
+		vsc = le32_to_cpu(*l_mg->trans_line->vsc);
+		sec_in_line = l_mg->trans_line->sec_in_line;
+		meta_weight = bitmap_weight(&l_mg->meta_bitmap,
+							PBLK_DATA_LINES);
+		map_weight = bitmap_weight(l_mg->trans_line->map_bitmap,
+							lm->sec_per_line);
+	}
+	spin_unlock(&l_mg->free_lock);
+	sz += snprintf(page + sz, PAGE_SIZE - sz,
+		"trans (%d) cur:%d, left:%d, vsc:%d, s:%d, map:%d/%d (%d)\n",
+			cur_trans, cur_sec, msecs, vsc, sec_in_line,
+			map_weight, lm->sec_per_line,
+			atomic_read(&pblk->inflight_io));
 	return sz;
 }
 

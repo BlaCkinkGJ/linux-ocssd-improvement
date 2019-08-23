@@ -154,10 +154,13 @@ void __pblk_map_invalidate(struct pblk *pblk, struct pblk_line *line,
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 	struct list_head *move_list = NULL;
 
+	/* TODO: check the NULL. Somewhere...  there exists NULL pointer */
+
 	/* Lines being reclaimed (GC'ed) cannot be invalidated. Before the L2P
 	 * table is modified with reclaimed sectors, a check is done to endure
 	 * that newer updates are not overwritten.
 	 */
+
 	spin_lock(&line->lock);
 	WARN_ON(line->state == PBLK_LINESTATE_FREE);
 
@@ -381,6 +384,7 @@ struct list_head *pblk_line_gc_list(struct pblk *pblk, struct pblk_line *line)
 	lockdep_assert_held(&line->lock);
 
 	if (!vsc) {
+		trace_printk("LINEGC_FULL %d\n", vsc);
 		if (line->gc_group != PBLK_LINEGC_FULL) {
 			line->gc_group = PBLK_LINEGC_FULL;
 			move_list = &l_mg->gc_full_list;
@@ -401,6 +405,7 @@ struct list_head *pblk_line_gc_list(struct pblk *pblk, struct pblk_line *line)
 			move_list = &l_mg->gc_low_list;
 		}
 	} else if (vsc == line->sec_in_line) {
+		trace_printk("LINEGC_EMPTY %d\n", vsc);
 		if (line->gc_group != PBLK_LINEGC_EMPTY) {
 			line->gc_group = PBLK_LINEGC_EMPTY;
 			move_list = &l_mg->gc_empty_list;
@@ -1576,27 +1581,14 @@ void pblk_pipeline_stop(struct pblk *pblk)
 struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
 {
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
-	struct pblk_line *cur, *new, *line;
+	struct pblk_line *cur, *new;
 	unsigned int left_seblks;
-	int is_add_tail = 1;
 
 	cur = l_mg->trans_line;
 	new = l_mg->trans_next;
 	if (!new)
 		goto out;
 	l_mg->trans_line = new;
-/*
-    // victim list management system
-	list_for_each_entry(line, &l_mg->victim_list, list) {
-		if (line->id == cur->id) {
-			is_add_tail = 0;
-			break;
-		}
-	}
-
-	if (is_add_tail)
-		list_add_tail(&cur->list, &l_mg->victim_list);
-*/
 
 	spin_lock(&l_mg->free_lock);
 	pblk_line_setup_metadata(new, l_mg, &pblk->lm);

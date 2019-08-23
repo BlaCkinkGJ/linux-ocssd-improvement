@@ -113,6 +113,11 @@ int pblk_trans_init(struct pblk *pblk)
 
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
 
+	if (PBLK_DATA_LINES < PBLK_TRANS_LINES) {
+		pr_err("PBLK_DATA_LINES must be over PBLK_TRANS_LINES");
+		return -ENOMEM;
+	}
+
 	dir->entry_num = pblk_trans_map_size(pblk);
 	do_div(dir->entry_num, PBLK_TRANS_CHUNK_SIZE);
 	dir->entry_num += 1;
@@ -120,6 +125,8 @@ int pblk_trans_init(struct pblk *pblk)
 	if (!dir->entry) {
 		return -ENOMEM;
 	}
+
+	init_rwsem(&dir->dir_sem);
 	dir->op = &trans_op;
 
 	/* original l2p table entry mapping */
@@ -154,6 +161,7 @@ int pblk_trans_init(struct pblk *pblk)
 static void pblk_trans_entry_update (struct pblk_trans_entry *entry)
 {
 	/* TODO: hot ratio calculation formula is needed!!! */
+	entry->hot_ratio += 1;
 	/* entry->hot_ratio += 1; */
 }
 
@@ -267,6 +275,7 @@ struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache hit */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			struct ppa_addr err;
+			pr_err("map_get ==> update cache failed...");
 			pblk_ppa_set_empty(&err);
 			return err;
 		}
@@ -308,7 +317,9 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 		struct ppa_addr ppa)
 {
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache miss */
+
 		if (pblk_trans_update_cache (pblk, lba)) {
+			pr_err("map_set ==> update cache failed...");
 			return -EINVAL;
 		}
 	}
