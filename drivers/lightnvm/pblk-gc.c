@@ -129,6 +129,104 @@ out:
 	kfree(gc_rq_ws);
 }
 
+
+static void pblk_trans_gc_line_prepare_ws(struct work_struct *work)
+{
+	struct pblk_line_ws *line_ws = container_of(work, struct pblk_line_ws,
+									ws);
+	struct pblk *pblk = line_ws->pblk;
+	struct pblk_line *line = line_ws->line;
+	struct pblk_line_meta *lm = &pblk->lm;
+	struct pblk_gc *gc = &pblk->gc;
+	struct pblk_line_ws *gc_rq_ws;
+	struct pblk_gc_rq *gc_rq;
+	unsigned long *invalid_bitmap;
+	int sec_left, nr_secs, bit;
+
+	invalid_bitmap = kmalloc(lm->sec_bitmap_len, GFP_KERNEL);
+	if (!invalid_bitmap)
+		goto fail_free_ws;
+
+	spin_lock(&line->lock);
+	bitmap_copy(invalid_bitmap, line->invalid_bitmap, lm->sec_per_line);
+	sec_left = pblk_line_vsc(line);
+	trace_printk("sec_left: %d\n", sec_left);
+	spin_unlock(&line->lock);
+
+	if (sec_left < 0) {
+		pr_err("pblk: corrupted GC line (%d)\n", line->id);
+		goto fail_free_ws;
+	}
+
+	bit = -1;
+next_rq:
+	gc_rq = kmalloc(sizeof(struct pblk_gc_rq), GFP_KERNEL);
+	if (!gc_rq)
+		goto fail_free_ws;
+
+	nr_secs = 0;
+	do {
+		bit = find_next_zero_bit(invalid_bitmap, lm->sec_per_line,
+								bit + 1);
+		if (bit > line->emeta_ssec)
+			break;
+
+		gc_rq->paddr_list[nr_secs] = bit;
+	} while (nr_secs < pblk->max_write_pgs);
+
+	if (unlikely(!nr_secs)) {
+		kfree(gc_rq);
+		goto out;
+	}
+
+	gc_rq->nr_secs = nr_secs;
+	gc_rq->line = line;
+
+	gc_rq_ws = kmalloc(sizeof(struct pblk_line_ws), GFP_KERNEL);
+	if (!gc_rq_ws)
+		goto fail_free_gc_rq;
+
+	gc_rq_ws->pblk = pblk;
+	gc_rq_ws->line = line;
+	gc_rq_ws->priv = gc_rq;
+
+	/* The write GC path can be much slower than the read GC one due to
+	 * the budget imposed by the rate-limiter. Balance in case that we get
+	 * back pressure from the write GC path.
+	 */
+	while (down_timeout(&gc->gc_sem, msecs_to_jiffies(30000)))
+		io_schedule();
+
+	kref_get(&line->ref);
+
+	INIT_WORK(&gc_rq_ws->ws, pblk_gc_line_ws);
+	queue_work(gc->gc_line_reader_wq, &gc_rq_ws->ws);
+
+	sec_left -= nr_secs;
+	if (sec_left > 0)
+		goto next_rq;
+
+out:
+	kfree(line_ws);
+	kfree(invalid_bitmap);
+
+	kref_put(&line->ref, pblk_line_put);
+	atomic_dec(&gc->read_inflight_gc);
+
+	return;
+
+fail_free_gc_rq:
+	kfree(gc_rq);
+fail_free_ws:
+	kfree(line_ws);
+
+	pblk_put_line_back(pblk, line);
+	kref_put(&line->ref, pblk_line_put);
+	atomic_dec(&gc->read_inflight_gc);
+
+	pr_err("pblk: Failed to GC line %d\n", line->id);
+}
+
 static void pblk_gc_line_prepare_ws(struct work_struct *work)
 {
 	struct pblk_line_ws *line_ws = container_of(work, struct pblk_line_ws,
@@ -231,7 +329,6 @@ next_rq:
 		io_schedule();
 
 	kref_get(&line->ref);
-
 	INIT_WORK(&gc_rq_ws->ws, pblk_gc_line_ws);
 	queue_work(gc->gc_line_reader_wq, &gc_rq_ws->ws);
 
@@ -280,7 +377,11 @@ static int pblk_gc_line(struct pblk *pblk, struct pblk_line *line)
 	line_ws->line = line;
 
 	atomic_inc(&gc->pipeline_gc);
-	INIT_WORK(&line_ws->ws, pblk_gc_line_prepare_ws);
+	if (line->type == PBLK_LINETYPE_TRANS) { 
+		INIT_WORK(&line_ws->ws, pblk_trans_gc_line_prepare_ws);
+	} else {
+		INIT_WORK(&line_ws->ws, pblk_gc_line_prepare_ws);
+	}
 	queue_work(gc->gc_reader_wq, &line_ws->ws);
 
 	return 0;
@@ -349,12 +450,15 @@ static struct pblk_line *pblk_gc_get_victim_line(struct pblk *pblk,
 static bool pblk_gc_should_run(struct pblk_gc *gc, struct pblk_rl *rl)
 {
 	unsigned int nr_blocks_free, nr_blocks_need;
+	int is_trans_forced = gc->gc_trans_run;
 
 	nr_blocks_need = pblk_rl_high_thrs(rl);
 	nr_blocks_free = pblk_rl_nr_free_blks(rl);
 
+	gc->gc_trans_run = 0;
+
 	/* This is not critical, no need to take lock here */
-	return ((gc->gc_active) && (nr_blocks_need > nr_blocks_free));
+	return (is_trans_forced || ((gc->gc_active) && (nr_blocks_need > nr_blocks_free)));
 }
 
 void pblk_gc_free_full_lines(struct pblk *pblk)

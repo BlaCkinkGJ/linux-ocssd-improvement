@@ -233,6 +233,8 @@ struct pblk_gc {
 	int gc_active;
 	int gc_enabled;
 	int gc_forced;
+	
+	int gc_trans_run;
 
 	struct task_struct *gc_ts;
 	struct task_struct *gc_writer_ts;
@@ -438,6 +440,8 @@ struct pblk_line {
 	int gc_group;			/* PBLK_LINEGC_X */
 	struct list_head list;		/* Free, GC lists */
 
+	atomic_t blk_aging;	
+
 	unsigned long *lun_bitmap;	/* Bitmap for LUNs mapped in line */
 
 	struct nvm_chk_meta *chks;	/* Chunks forming line */
@@ -476,8 +480,7 @@ struct pblk_line {
 	spinlock_t lock;		/* Necessary for invalid_bitmap only */
 };
 
-#define PBLK_DATA_LINES 10 // always bigger than trans lines
-#define PBLK_TRANS_LINES 5
+#define PBLK_DATA_LINES 20
 
 enum {
 	PBLK_KMALLOC_META = 1,
@@ -601,15 +604,16 @@ struct pblk_trans_cache {
 	                          /* (u64 or u32 casting is necessary!) */
 	unsigned char *bucket; /* It is a kind of write buffer */
 	unsigned long *free_bitmap;
+	spinlock_t lock;
 };
 
 struct pblk_trans_entry {
-	int hot_ratio;
+	atomic_t hot_ratio; /* TODO: atomic!!!*/
 	struct pblk_line *line;
 	u64 paddr;
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
-	unsigned long bit_idx;
+	atomic64_t bit_idx;
 	unsigned char *cache_ptr; /* start location of cache */
 };
 
@@ -1219,8 +1223,10 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 	struct ppa_addr ppa;
 
 #ifndef PBLK_DISABLE_D_FTL
-	if (pblk->dir.enable)
-		return pblk_trans_l2p_map_get(pblk, lba);
+	if (pblk->dir.enable) {
+		struct ppa_addr ppa = pblk_trans_l2p_map_get(pblk, lba);
+		return ppa;
+	}
 #endif
 
 	if (pblk->addrf_len < 32) {

@@ -100,9 +100,7 @@ next_rq:
 
 		rqd.flags = pblk_set_progr_mode(pblk, PBLK_WRITE);
 		for (i = 0; i < rqd.nr_ppas; ) {
-			spin_lock(&line->lock);
-			paddr = __pblk_alloc_page(pblk, line, min);
-			spin_unlock(&line->lock);
+			paddr = pblk_alloc_page(pblk, line, min);
 			for (j = 0; j < min; j++, i++, paddr++) {
 				if(entry->paddr == ADDR_EMPTY) /* update the paddr */
 					entry->paddr = paddr;
@@ -156,7 +154,7 @@ next_rq:
 		goto free_rqd_dma;
 	}
 
-	atomic_dec(&pblk->inflight_io);
+	// atomic_dec(&pblk->inflight_io);
 
 	if (rqd.error) {
 		if (dir == PBLK_WRITE)
@@ -178,19 +176,50 @@ free_rqd_dma:
 int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
-	struct pblk_trans_dir *dir = &pblk->dir;
 	int ret;
 
 	if (entry->line == NULL || entry->paddr == ADDR_EMPTY) {
 		return -EINVAL;
 	}
-	down_read(&dir->dir_sem);
 	entry->cache_ptr = cache->bucket;
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_READ);
 	entry->cache_ptr = NULL;
-	up_read(&dir->dir_sem);
 	
 	return ret;
+}
+
+static void ocssd_l2p_add_to_gc(struct pblk *pblk, struct pblk_line *line) 
+{
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+	struct pblk_line_meta *lm = &pblk->lm;
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct list_head *move_list;
+
+	int i;
+
+	spin_lock(&l_mg->free_lock);
+	WARN_ON(!test_and_clear_bit(line->meta_line, &l_mg->meta_bitmap));
+	spin_unlock(&l_mg->free_lock);
+
+	spin_lock(&l_mg->gc_lock);
+	spin_lock(&line->lock);
+	line->state = PBLK_LINESTATE_CLOSED;
+	move_list = pblk_line_gc_list(pblk, line);
+
+	list_add_tail(&line->list, move_list);
+
+	for (i = 0; i < lm->blk_per_line; i++) {
+		struct pblk_lun *rlun = &pblk->luns[i];
+		int pos = pblk_ppa_to_pos(geo, rlun->bppa);
+		int state = line->chks[pos].state;
+
+		if (!(state & NVM_CHK_ST_OFFLINE))
+			state = NVM_CHK_ST_CLOSED;
+	}
+
+	spin_unlock(&line->lock);
+	spin_unlock(&l_mg->gc_lock);
 }
 
 /**
@@ -202,29 +231,29 @@ static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
 	struct pblk_line_meta *lm = &pblk->lm;
-	u64 cur = paddr;
+	struct pblk_gc *gc = &pblk->gc;
+	u64 cur;
+	int prev_vsc = le32_to_cpu(*line->vsc);
+
 	int weight, bench = lm->sec_per_line;
 
-	for(;cur < paddr + geo->clba; cur++) {
-		__pblk_map_invalidate(pblk, line, cur);
+	for(cur = paddr; cur < paddr + geo->clba; cur++) {
+		__pblk_map_invalidate(pblk, line, paddr);
 	}
 
-	weight = bitmap_weight(line->invalid_bitmap, lm->sec_per_line);
+	*line->vsc = cpu_to_le32(prev_vsc - geo->clba);
 
-	do_div(bench, geo->clba); /* Doesn't work... */
+	do_div(bench, geo->clba);
 	bench -= 1;
-	bench *= geo->clba;
+	atomic_inc(&line->blk_aging);
 
-	/*
-	 * free line can be made by below function.
-	 * I think lock contentiobn occured
-	 */
-	if (weight > bench) { // error occured.... why????
-		for(;cur < lm->sec_per_line; cur++) {
-			__pblk_map_invalidate(pblk, line, cur);
-		}
-		bitmap_copy(line->map_bitmap, line->invalid_bitmap, lm->sec_per_line);
-		pblk_line_close(pblk, line);
+	weight = atomic_read(&line->blk_aging);
+
+	trace_printk("[%d/%lld] weight: %d bench: %d remain: %d\n", line->id, paddr, weight, bench, line->left_msecs);
+	if (weight >= bench) {
+		ocssd_l2p_add_to_gc(pblk, line);
+		gc->gc_enabled = 1;
+		gc->gc_trans_run = 1;
 		pblk_gc_should_start(pblk);
 	}
 }
@@ -233,7 +262,6 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
-	struct pblk_trans_dir *dir = &pblk->dir;
 
 	int ret;
 	int nr_secs = geo->clba;
@@ -244,7 +272,6 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	if (entry->cache_ptr == NULL || line == NULL)
 		return -EINVAL;
 
-	down_write(&dir->dir_sem);
 	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line)
 		entry->line = pblk_line_replace_trans(pblk);
 
@@ -252,7 +279,6 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 		ocssd_l2p_invalidate(pblk, line, paddr);
 
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
-	up_write(&dir->dir_sem);
 
 	return ret;
 }

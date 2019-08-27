@@ -78,10 +78,10 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	for(addr = 0; addr <= pblk->rl.nr_secs; addr += chk_size) {
 		struct pblk_trans_entry *now = &dir->entry[index];
 
-		now->hot_ratio = -1;
+		atomic_set(&now->hot_ratio, -1);
 		now->line = line;
 		now->paddr = ADDR_EMPTY;
-		now->bit_idx = 0;
+		atomic64_set(&now->bit_idx, 0);
 		now->cache_ptr = pblk_trans_ptr_get(pblk, pblk->trans_map, addr);
 
 		now->chk_size = chk_size;
@@ -110,17 +110,13 @@ int pblk_trans_init(struct pblk *pblk)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_gc *gc = &pblk->gc;
 
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
 
-	if (PBLK_DATA_LINES < PBLK_TRANS_LINES) {
-		pr_err("PBLK_DATA_LINES must be over PBLK_TRANS_LINES");
-		return -ENOMEM;
-	}
-
 	dir->entry_num = pblk_trans_map_size(pblk);
 	do_div(dir->entry_num, PBLK_TRANS_CHUNK_SIZE);
-	dir->entry_num += 1;
+	//dir->entry_num += 1;
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
 	if (!dir->entry) {
 		return -ENOMEM;
@@ -128,10 +124,16 @@ int pblk_trans_init(struct pblk *pblk)
 
 	init_rwsem(&dir->dir_sem);
 	dir->op = &trans_op;
+#ifdef CONFIG_NVM_DEBUG
+	pr_info("pblk-trans: directory initialization phase: pass\n");
+#endif
 
 	/* original l2p table entry mapping */
 	pblk_trans_recov_from_mem(pblk);
-
+#ifdef CONFIG_NVM_DEBUG
+	pr_info("pblk-trans: directory recovers from memory phase: pass\n");
+#endif
+	
 	/* cache initialization */
 	cache->size = PBLK_TRANS_CHUNK_SIZE * PBLK_TRANS_CACHE_SIZE;
 	cache->trans_map = vmalloc(cache->size); 
@@ -152,17 +154,24 @@ int pblk_trans_init(struct pblk *pblk)
 	}
 
 	bitmap_zero(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+#ifdef CONFIG_NVM_DEBUG
+	pr_info("pblk-trans: cache initialization phase: pass\n");
+#endif
 
 	dir->enable = 1;
+	gc->gc_trans_run = 0;
+#ifdef CONFIG_NVM_DEBUG
+	pr_info("pblk-trans: Ready to use directory: OK\n");
+#endif
 
 	return 0;
 }
 
-static void pblk_trans_entry_update (struct pblk_trans_entry *entry)
+static void pblk_trans_entry_update (struct pblk *pblk, sector_t entry_id)
 {
-	/* TODO: hot ratio calculation formula is needed!!! */
-	entry->hot_ratio += 1;
-	/* entry->hot_ratio += 1; */
+	struct pblk_trans_dir *dir = &pblk->dir;
+	atomic_inc(&dir->entry[entry_id].hot_ratio);
+
 }
 
 static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
@@ -174,7 +183,6 @@ static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
 
 	offset = do_div(base, dir->entry[0].chk_size);
 	ptr = dir->entry[base].cache_ptr;
-
 	return ptr != NULL;
 }
 
@@ -190,6 +198,7 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 
 	offset = do_div(base, dir->entry[0].chk_size);
 	pblk_ppa_set_empty(&ppa);
+
 	ptr = dir->entry[base].cache_ptr;
 
 	if (ptr == NULL) /* cache miss */
@@ -204,9 +213,24 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 
 		ppa = chk[offset];
 	}
-	pblk_trans_entry_update(&dir->entry[base]);
+
+	pblk_trans_entry_update(pblk, base);
 
 	return ppa;
+}
+
+static void pblk_trans_directory_refresh (struct pblk *pblk) 
+{
+	struct pblk_trans_dir *dir = &pblk->dir;
+	unsigned int i;
+	for (i = 0; i < dir->entry_num; i++) {
+		int cur_hot = atomic_read(&dir->entry[i].hot_ratio);
+		int bias = cur_hot;
+		do_div(bias, 10);
+		if (cur_hot - bias <= 0)
+			continue;
+		atomic_set(&dir->entry[i].hot_ratio, cur_hot - bias);
+	}
 }
 
 static int pblk_trans_victim_select (struct pblk *pblk)
@@ -214,24 +238,30 @@ static int pblk_trans_victim_select (struct pblk *pblk)
 	struct pblk_trans_dir *dir = &pblk->dir;
 	struct pblk_trans_cache *cache = &pblk->cache;
 	int victim_bit = -1, victim_entry = 0;
-	size_t i = 0;
 	int coldest = INT_MAX;
+	unsigned int i;
 
-	for (i = 1; i < dir->entry_num; i++) {
-		if (dir->entry[i].hot_ratio < coldest &&
-				dir->entry[i].cache_ptr != NULL) {
+	for (i = 0; i < dir->entry_num; i++) {
+		unsigned int hot_ratio = atomic_read(&dir->entry[i].hot_ratio);
+		unsigned char *cache_ptr = NULL;
+
+		cache_ptr = dir->entry[i].cache_ptr;
+		if (hot_ratio < coldest && cache_ptr != NULL) {
 			victim_entry = i;
-			coldest = dir->entry[i].hot_ratio;
+			coldest = hot_ratio;
 		}
 	}
-	victim_bit = dir->entry[victim_entry].bit_idx;
+	victim_bit = atomic64_read(&dir->entry[victim_entry].bit_idx);
 	if(dir->op->write(pblk, &dir->entry[victim_entry]))
 		return -1;
 
 	clear_bit(victim_bit, cache->free_bitmap);
 	dir->entry[victim_entry].cache_ptr = NULL;
-	dir->entry[victim_entry].hot_ratio = -1;
-	dir->entry[victim_entry].bit_idx = 0;
+	atomic_set(&dir->entry[victim_entry].hot_ratio, -1);
+	atomic64_set(&dir->entry[victim_entry].bit_idx, 0);
+
+
+	pblk_trans_directory_refresh(pblk);
 
 	return victim_bit;
 }
@@ -253,20 +283,21 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 
 	if (bit >= PBLK_TRANS_CACHE_SIZE) { /* victim selected */
 		bit = pblk_trans_victim_select(pblk);
-		if (bit == -1)
+		if (bit == -1) {
 			return -EINVAL;
+		}
 	}
 
-	if(dir->op->read(pblk, entry))
+	if(dir->op->read(pblk, entry)) {
 		return -EINVAL;
+	}
 
 	cache_chk = pblk_trans_ptr_get(pblk, cache->trans_map, bit*entry->chk_size);
 	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, entry->chk_size);
 	entry->cache_ptr = cache_chk;
-	entry->bit_idx = bit;
-	entry->hot_ratio = 0;
+	atomic64_set(&entry->bit_idx, bit);
+	atomic_set(&entry->hot_ratio, 0);
 	set_bit(bit, cache->free_bitmap);
-
 	return 0;
 }
 
@@ -293,6 +324,7 @@ static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
 	void *ptr;
 
 	offset = do_div(base, dir->entry[0].chk_size);
+
 	ptr = dir->entry[base].cache_ptr;
 
 	if (ptr == NULL) /* cache miss */

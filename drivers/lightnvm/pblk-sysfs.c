@@ -313,6 +313,20 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			cur_trans, cur_sec, msecs, vsc, sec_in_line,
 			map_weight, lm->sec_per_line,
 			atomic_read(&pblk->inflight_io));
+	{
+		struct pblk_trans_dir *dir = &pblk->dir;
+		int i;
+
+		sz += snprintf(page + sz, PAGE_SIZE - sz,
+				"id\tline\t\tpaddr\thot_ratio\tbit_idx\tcache_ptr\n");
+		for(i = 0; i < dir->entry_num; i++) {
+			struct pblk_trans_entry *entry = &dir->entry[i];
+			sz += snprintf(page + sz, PAGE_SIZE - sz,
+					"%d\t%d\t%lld\t%d\t%lu\t%p\n",
+					i, entry->line->id, entry->paddr, atomic_read(&entry->hot_ratio), atomic64_read(&entry->bit_idx), entry->cache_ptr);
+
+		}
+	}
 	return sz;
 }
 

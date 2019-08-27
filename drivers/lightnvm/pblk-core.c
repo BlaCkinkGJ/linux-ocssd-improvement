@@ -154,13 +154,6 @@ void __pblk_map_invalidate(struct pblk *pblk, struct pblk_line *line,
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 	struct list_head *move_list = NULL;
 
-	/* TODO: check the NULL. Somewhere...  there exists NULL pointer */
-
-	/* Lines being reclaimed (GC'ed) cannot be invalidated. Before the L2P
-	 * table is modified with reclaimed sectors, a check is done to endure
-	 * that newer updates are not overwritten.
-	 */
-
 	spin_lock(&line->lock);
 	WARN_ON(line->state == PBLK_LINESTATE_FREE);
 
@@ -384,9 +377,8 @@ struct list_head *pblk_line_gc_list(struct pblk *pblk, struct pblk_line *line)
 	lockdep_assert_held(&line->lock);
 
 	if (!vsc) {
-		trace_printk("LINEGC_FULL %d\n", vsc);
 		if (line->gc_group != PBLK_LINEGC_FULL) {
-			line->gc_group = PBLK_LINEGC_FULL;
+			line->gc_group = PBLK_LINEGC_FULL; 
 			move_list = &l_mg->gc_full_list;
 		}
 	} else if (vsc < lm->high_thrs) {
@@ -405,7 +397,6 @@ struct list_head *pblk_line_gc_list(struct pblk *pblk, struct pblk_line *line)
 			move_list = &l_mg->gc_low_list;
 		}
 	} else if (vsc == line->sec_in_line) {
-		trace_printk("LINEGC_EMPTY %d\n", vsc);
 		if (line->gc_group != PBLK_LINEGC_EMPTY) {
 			line->gc_group = PBLK_LINEGC_EMPTY;
 			move_list = &l_mg->gc_empty_list;
@@ -1222,6 +1213,7 @@ static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)
 	atomic_set(&line->left_eblks, blk_to_erase);
 	atomic_set(&line->left_seblks, blk_to_erase);
 	atomic_set(&line->trans_gc_value, 0);
+	atomic_set(&line->blk_aging, 0);
 
 	line->meta_distance = lm->meta_distance;
 	spin_unlock(&line->lock);
