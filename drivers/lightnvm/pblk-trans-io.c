@@ -16,7 +16,6 @@
 
 #include "pblk.h"
 
-
 /**
  * TODO: Make line close.
  * My policy is to:
@@ -27,7 +26,7 @@
  *	5. If entry has the victim lines information then it copies to the new line
  *	   and updates the entry information
  */
-int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir)
+static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
@@ -35,6 +34,7 @@ int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry,
 	struct bio *bio;
 	struct nvm_rq rqd;
 	struct pblk_line *line = entry->line;
+	struct pblk_trans_cache *cache = &pblk->cache;
 	dma_addr_t dma_ppa_list, dma_meta_list;
 	int min = pblk->min_write_pgs;
 	int left_ppas;
@@ -47,6 +47,7 @@ int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry,
 
 	void *trans_buf = entry->cache_ptr;
 
+	printk("START(%d): %d(%d)\n",dir, entry->id, ((u32*)entry->cache_ptr)[entry->row_size - 1]);
 	if (dir == PBLK_WRITE) {
 		bio_op = REQ_OP_WRITE;
 		cmd_op = NVM_OP_PWRITE;
@@ -68,9 +69,9 @@ int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry,
 	dma_ppa_list = dma_meta_list + pblk_dma_ppa_size;
 
 	/* geo->clba means number of sectors in a chunk */
-	left_ppas = geo->clba;
+	left_ppas = cache->bucket_sec;
 
-next_rq:
+next_trans_rq:
 	memset(&rqd, 0, sizeof(struct nvm_rq));
 
 	rq_ppas = pblk_calc_secs(pblk, left_ppas, 0);
@@ -122,7 +123,7 @@ next_rq:
 			while (test_bit(pos, line->blk_bitmap)) {
 				paddr += min;
 				if (pblk_boundary_paddr_checks(pblk, paddr)) {
-					pr_err("pblk: corrupt emeta line:%d\n",
+					pr_err("pblk: corrupt line:%d\n",
 								line->id);
 					bio_put(bio);
 					ret = -EINTR;
@@ -134,7 +135,7 @@ next_rq:
 			}
 
 			if (pblk_boundary_paddr_checks(pblk, paddr + min)) {
-				pr_err("pblk: corrupt emeta line:%d\n",
+				pr_err("pblk: corrupt line:%d\n",
 								line->id);
 				bio_put(bio);
 				ret = -EINTR;
@@ -149,7 +150,7 @@ next_rq:
 
 	ret = pblk_submit_io_sync(pblk, &rqd);
 	if (ret) {
-		pr_err("pblk: emeta I/O submission failed: %d\n", ret);
+		pr_err("pblk: I/O submission failed: %d\n", ret);
 		bio_put(bio);
 		goto free_rqd_dma;
 	}
@@ -165,25 +166,24 @@ next_rq:
 
 	trans_buf += rq_len; /* move the buffer pointer */
 	left_ppas -= rq_ppas;
+
 	if (left_ppas)
-		goto next_rq;
+		goto next_trans_rq;
 free_rqd_dma:
 	nvm_dev_dma_free(dev->parent, rqd.meta_list, rqd.dma_meta_list);
+	printk("END(%d): %d(%d)\n",dir, entry->id, ((u32*)entry->cache_ptr)[entry->row_size - 1]);
 	return ret;
 
 }
 
 int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
-	struct pblk_trans_cache *cache = &pblk->cache;
 	int ret;
 
 	if (entry->line == NULL || entry->paddr == ADDR_EMPTY) {
 		return -EINVAL;
 	}
-	entry->cache_ptr = cache->bucket;
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_READ);
-	entry->cache_ptr = NULL;
 	
 	return ret;
 }
@@ -249,7 +249,6 @@ static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 
 
 	weight = atomic_read(&line->blk_aging);
 
-	trace_printk("[%d/%lld] weight: %d bench: %d remain: %d\n", line->id, paddr, weight, bench, line->left_msecs);
 	if (weight >= bench) {
 		ocssd_l2p_add_to_gc(pblk, line);
 		gc->gc_enabled = 1;
@@ -263,6 +262,8 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
 
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+
 	int ret;
 	int nr_secs = geo->clba;
 	
@@ -272,8 +273,10 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	if (entry->cache_ptr == NULL || line == NULL)
 		return -EINVAL;
 
-	if (line->cur_sec + nr_secs > pblk->lm.sec_per_line)
+	if (l_mg->trans_line->cur_sec + nr_secs > pblk->lm.sec_per_line)
 		entry->line = pblk_line_replace_trans(pblk);
+	else
+		entry->line = l_mg->trans_line;
 
 	if (paddr != ADDR_EMPTY) 
 		ocssd_l2p_invalidate(pblk, line, paddr);

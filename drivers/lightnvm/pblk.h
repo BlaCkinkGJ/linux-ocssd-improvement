@@ -603,16 +603,18 @@ struct pblk_trans_cache {
 	unsigned char *trans_map; /* compatible type of the mapping table */
 	                          /* (u64 or u32 casting is necessary!) */
 	unsigned char *bucket; /* It is a kind of write buffer */
+	size_t bucket_sec;
 	unsigned long *free_bitmap;
 	spinlock_t lock;
 };
 
 struct pblk_trans_entry {
+	int id;
 	atomic_t hot_ratio; /* TODO: atomic!!!*/
 	struct pblk_line *line;
 	u64 paddr;
 	/* When you use the size then you have to multiply 'entry_size' */
-	size_t chk_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
+	size_t row_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	atomic64_t bit_idx;
 	unsigned char *cache_ptr; /* start location of cache */
 };
@@ -628,7 +630,6 @@ struct pblk_trans_dir {
 	int enable; /* Initial recovery successful then this is true */
 	struct pblk_trans_entry *entry;
 	struct pblk_trans_op *op;
-	struct rw_semaphore dir_sem;
 };
 
 struct pblk {
@@ -986,7 +987,6 @@ void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset);
  * pblk trans io
  */
 
-int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir);
 int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry);
 int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
 int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry);

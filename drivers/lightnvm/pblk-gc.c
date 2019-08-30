@@ -150,7 +150,6 @@ static void pblk_trans_gc_line_prepare_ws(struct work_struct *work)
 	spin_lock(&line->lock);
 	bitmap_copy(invalid_bitmap, line->invalid_bitmap, lm->sec_per_line);
 	sec_left = pblk_line_vsc(line);
-	trace_printk("sec_left: %d\n", sec_left);
 	spin_unlock(&line->lock);
 
 	if (sec_left < 0) {
