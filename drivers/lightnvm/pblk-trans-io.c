@@ -47,7 +47,6 @@ static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry 
 
 	void *trans_buf = entry->cache_ptr;
 
-	printk("START(%d): %d(%d)\n",dir, entry->id, ((u32*)entry->cache_ptr)[entry->row_size - 1]);
 	if (dir == PBLK_WRITE) {
 		bio_op = REQ_OP_WRITE;
 		cmd_op = NVM_OP_PWRITE;
@@ -171,7 +170,6 @@ next_trans_rq:
 		goto next_trans_rq;
 free_rqd_dma:
 	nvm_dev_dma_free(dev->parent, rqd.meta_list, rqd.dma_meta_list);
-	printk("END(%d): %d(%d)\n",dir, entry->id, ((u32*)entry->cache_ptr)[entry->row_size - 1]);
 	return ret;
 
 }
@@ -233,15 +231,12 @@ static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 
 	struct pblk_line_meta *lm = &pblk->lm;
 	struct pblk_gc *gc = &pblk->gc;
 	u64 cur;
-	int prev_vsc = le32_to_cpu(*line->vsc);
 
 	int weight, bench = lm->sec_per_line;
 
 	for(cur = paddr; cur < paddr + geo->clba; cur++) {
 		__pblk_map_invalidate(pblk, line, paddr);
 	}
-
-	*line->vsc = cpu_to_le32(prev_vsc - geo->clba);
 
 	do_div(bench, geo->clba);
 	bench -= 1;
@@ -273,7 +268,7 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	if (entry->cache_ptr == NULL || line == NULL)
 		return -EINVAL;
 
-	if (l_mg->trans_line->cur_sec + nr_secs > pblk->lm.sec_per_line)
+	if (l_mg->trans_line->cur_sec + nr_secs >= pblk->lm.sec_per_line)
 		entry->line = pblk_line_replace_trans(pblk);
 	else
 		entry->line = l_mg->trans_line;

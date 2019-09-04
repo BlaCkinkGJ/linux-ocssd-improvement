@@ -4,8 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 as published by the Free Software Foundation.
- *
+ * 2 as published by the Free Software Foundation.  
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -87,6 +86,7 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		atomic64_set(&now->bit_idx, 0);
 		ptr = &pblk->trans_map[index*PBLK_TRANS_CHUNK_SIZE];
 		pblk_trans_mem_copy(pblk, cache->bucket, ptr, PBLK_TRANS_CHUNK_SIZE);
+		pr_info("write position: %p to %p", ptr, cache->bucket);
 
 		now->row_size = row_size;
 		now->cache_ptr = cache->bucket;
@@ -121,9 +121,8 @@ int pblk_trans_init(struct pblk *pblk)
 	struct pblk_gc *gc = &pblk->gc;
 
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
+	unsigned int remain = 0;
 
-	dir->entry_num = pblk_trans_map_size(pblk);
-	do_div(dir->entry_num, PBLK_TRANS_CHUNK_SIZE);
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
 	if (!dir->entry) {
 		return -ENOMEM;
@@ -159,18 +158,18 @@ int pblk_trans_init(struct pblk *pblk)
 	pr_info("pblk-trans: cache initialization phase: OK\n");
 #endif
 
-	dir->enable = 1;
-	gc->gc_trans_run = 1;
-#ifdef CONFIG_NVM_DEBUG
-	pr_info("pblk-trans: Ready to use directory: OK\n");
-#endif
-
 	/* original l2p table entry mapping */
 	pblk_trans_recov_from_mem(pblk);
 #ifdef CONFIG_NVM_DEBUG
 	pr_info("pblk-trans: directory recovers from memory phase: OK\n");
 #endif
 	
+	dir->enable = 1;
+	gc->gc_trans_run = 1;
+#ifdef CONFIG_NVM_DEBUG
+	pr_info("pblk-trans: Ready to use directory: OK\n");
+#endif
+
 	return 0;
 }
 
@@ -374,6 +373,8 @@ void pblk_trans_free(struct pblk *pblk)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
+
+	pr_info("pblk trans: free sequence executed");
 
 	vfree(cache->trans_map);
 	vfree(cache->free_bitmap);

@@ -30,7 +30,6 @@
 #include <linux/uuid.h>
 
 #include <asm/div64.h>
-
 #include <linux/lightnvm.h>
 
 /* Run only GC if less than 1/X blocks are free */
@@ -65,7 +64,7 @@
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (5) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (3) /* Cache size */
 //#define PBLK_TRANS_DEBUG
 
 enum {

@@ -146,20 +146,36 @@ static int pblk_l2p_init(struct pblk *pblk, bool factory_init)
 	sector_t i;
 	struct ppa_addr ppa;
 	size_t map_size = 0;
+	sector_t map_secs = pblk->rl.nr_secs;
+
+#ifndef PBLK_DISABLE_D_FTL
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+
+	struct pblk_trans_dir *dir = &pblk->dir;
+#endif
 
 	map_size = pblk_trans_map_size(pblk);
 
 #ifndef PBLK_DISABLE_D_FTL
-	map_size += PBLK_TRANS_CHUNK_SIZE;
+	i = 0;
+	while(map_size > PBLK_TRANS_CHUNK_SIZE * i)
+		i++;
+	map_size = PBLK_TRANS_CHUNK_SIZE * i;
+	dir->entry_num = i;
 #endif
 
-	pblk->trans_map = vmalloc(map_size);
+	pblk->trans_map = vzalloc(map_size);
 	if (!pblk->trans_map)
 		return -ENOMEM;
 
 	pblk_ppa_set_empty(&ppa);
 
-	for (i = 0; i < pblk->rl.nr_secs; i++)
+#ifndef PBLK_DISABLE_D_FTL
+	map_secs = map_size;
+	do_div(map_secs, geo->csecs);
+#endif
+	for (i = 0; i < map_secs; i++)
 		pblk_trans_map_set(pblk, i, ppa);
 
 	return pblk_l2p_recover(pblk, factory_init);
