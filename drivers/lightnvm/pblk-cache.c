@@ -19,6 +19,7 @@
 
 int pblk_write_to_cache(struct pblk *pblk, struct bio *bio, unsigned long flags)
 {
+	struct pblk_trans_dir *dir = &pblk->dir;
 	struct request_queue *q = pblk->dev->q;
 	struct pblk_w_ctx w_ctx;
 	sector_t lba = pblk_get_lba(bio);
@@ -54,8 +55,23 @@ retry:
 
 	for (i = 0; i < nr_entries; i++) {
 		void *data = bio_data(bio);
-
+		const size_t copy_size = sizeof(struct pblk_update_item);
+	
 		w_ctx.lba = lba + i;
+		
+		if (dir->enable && (kfifo_avail(&dir->fifo) > copy_size)) {
+			struct pblk_update_item item;
+			unsigned int ret = 0;
+
+			item.type = bio->content_type;
+			item.lba = w_ctx.lba;
+
+			ret = kfifo_in(&dir->fifo, &item, sizeof(struct pblk_update_item));
+			if (ret < sizeof(struct pblk_update_item)) {
+				pr_warn("something wrong to add item");
+			}
+			pblk_trans_update_kick(pblk);
+		}
 
 		pos = pblk_rb_wrap_pos(&pblk->rwb, bpos + i);
 		pblk_rb_write_entry_user(&pblk->rwb, data, w_ctx, pos);

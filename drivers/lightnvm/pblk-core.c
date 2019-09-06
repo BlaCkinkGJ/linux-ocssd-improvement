@@ -954,6 +954,70 @@ int pblk_line_erase(struct pblk *pblk, struct pblk_line *line)
 	return 0;
 }
 
+static void pblk_line_setup_metadata_trans(struct pblk_line *line,
+				     struct pblk_line_mgmt *l_mg,
+				     struct pblk_line_meta *lm)
+{
+	struct pblk_smeta *smeta;
+	struct pblk_emeta *emeta;
+
+	smeta = kmalloc(lm->smeta_len, GFP_KERNEL);
+	if (!smeta)
+		goto fail_free_smeta;
+
+	emeta = kmalloc(sizeof(struct pblk_emeta), GFP_KERNEL);
+
+	if (!emeta)
+		goto fail_free_emeta;
+
+	if (lm->emeta_len[0] > KMALLOC_MAX_CACHE_SIZE) {
+		l_mg->emeta_alloc_type = PBLK_VMALLOC_META;
+
+		emeta->buf = vmalloc(lm->emeta_len[0]);
+		if (!emeta->buf) {
+			kfree(emeta);
+			goto fail_free_emeta;
+		}
+
+		emeta->nr_entries = lm->emeta_sec[0];
+	} else {
+		l_mg->emeta_alloc_type = PBLK_KMALLOC_META;
+
+		emeta->buf = kmalloc(lm->emeta_len[0], GFP_KERNEL);
+		if (!emeta->buf) {
+			kfree(emeta);
+			goto fail_free_emeta;
+		}
+	}
+
+	emeta->nr_entries = lm->emeta_sec[0];
+
+	line->meta_line = 0;
+
+	line->smeta = smeta;
+	line->emeta = emeta;
+
+	memset(line->smeta, 0, lm->smeta_len);
+	memset(line->emeta->buf, 0, lm->emeta_len[0]);
+
+	line->emeta->mem = 0;
+	atomic_set(&line->emeta->sync, 0);
+
+	return;
+
+
+fail_free_emeta:
+	if (l_mg->emeta_alloc_type == PBLK_VMALLOC_META)
+		vfree(emeta->buf);
+	else
+		kfree(emeta->buf);
+	kfree(emeta);
+fail_free_smeta:
+	kfree(smeta);
+}
+
+
+
 static void pblk_line_setup_metadata(struct pblk_line *line,
 				     struct pblk_line_mgmt *l_mg,
 				     struct pblk_line_meta *lm)
@@ -1213,7 +1277,6 @@ static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)
 	atomic_set(&line->left_eblks, blk_to_erase);
 	atomic_set(&line->left_seblks, blk_to_erase);
 	atomic_set(&line->trans_gc_value, 0);
-	atomic_set(&line->blk_aging, 0);
 
 	line->meta_distance = lm->meta_distance;
 	spin_unlock(&line->lock);
@@ -1390,7 +1453,7 @@ struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk)
 	line->type = PBLK_LINETYPE_TRANS;
 	l_mg->trans_line = line;
 
-	pblk_line_setup_metadata(line, l_mg, &pblk->lm);
+	pblk_line_setup_metadata_trans(line, l_mg, &pblk->lm);
 
 	l_mg->trans_next = pblk_line_get(pblk);
 	if (!l_mg->trans_next) {
@@ -1583,7 +1646,7 @@ struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)
 	l_mg->trans_line = new;
 
 	spin_lock(&l_mg->free_lock);
-	pblk_line_setup_metadata(new, l_mg, &pblk->lm);
+	pblk_line_setup_metadata_trans(new, l_mg, &pblk->lm);
 	spin_unlock(&l_mg->free_lock);
 
 retry_erase:
@@ -1600,7 +1663,7 @@ retry_erase:
 	}
 
 retry_setup:
-	if (!pblk_line_init_metadata(pblk, new, cur)) {
+	if (!pblk_line_init_metadata(pblk, new, NULL)) {
 		new = pblk_line_trans_retry(pblk, new);
 		if (!new)
 			goto out;
@@ -1635,6 +1698,7 @@ retry_setup:
 	spin_unlock(&l_mg->free_lock);
 
 out:
+    new->type = PBLK_LINETYPE_TRANS;
 	return new;
 }
 

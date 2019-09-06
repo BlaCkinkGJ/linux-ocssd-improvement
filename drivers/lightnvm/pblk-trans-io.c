@@ -102,6 +102,7 @@ next_trans_rq:
 		for (i = 0; i < rqd.nr_ppas; ) {
 			paddr = pblk_alloc_page(pblk, line, min);
 			for (j = 0; j < min; j++, i++, paddr++) {
+				WARN_ON(test_and_set_bit(paddr, entry->map_bitmap));
 				if(entry->paddr == ADDR_EMPTY) /* update the paddr */
 					entry->paddr = paddr;
 				meta_list[i].lba = cpu_to_le64(ADDR_EMPTY);
@@ -141,9 +142,12 @@ next_trans_rq:
 				goto free_rqd_dma;
 			}
 
-			for (j = 0; j < min; j++, i++, paddr++)
+			for (j = 0; j < min; j++, i++) {
 				rqd.ppa_list[i] =
 					addr_to_gen_ppa(pblk, paddr, line->id);
+				paddr = find_next_bit(entry->map_bitmap,
+									pblk->lm.sec_per_line, paddr + 1);
+			}
 		}
 	}
 
@@ -220,36 +224,59 @@ static void ocssd_l2p_add_to_gc(struct pblk *pblk, struct pblk_line *line)
 	spin_unlock(&l_mg->gc_lock);
 }
 
+static void __ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 paddr)
+{
+	spin_lock(&line->lock);
+	WARN_ON(line->state == PBLK_LINESTATE_FREE);
+
+	if (test_and_set_bit(paddr, line->invalid_bitmap)) {
+		WARN_ONCE(1, "pblk: double invalidate\n");
+		spin_unlock(&line->lock);
+		return ;
+	}
+	le32_add_cpu(line->vsc, -1);
+	spin_unlock(&line->lock);
+}
+
 /**
  * I think invalidate speed may occur the problem. 
  * So, how about make the ocssd_l2p_invalidate kernel thread?
  */
-static void ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 paddr)
+static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entry, u64 paddr)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
 	struct pblk_line_meta *lm = &pblk->lm;
+	struct pblk_line *line = entry->line;
 	struct pblk_gc *gc = &pblk->gc;
-	u64 cur;
 
-	int weight, bench = lm->sec_per_line;
+	int weight, bench;
+	int i;
 
-	for(cur = paddr; cur < paddr + geo->clba; cur++) {
-		__pblk_map_invalidate(pblk, line, paddr);
+	for(i = 0; i < geo->clba; i++) {
+		WARN_ON(!test_and_clear_bit(paddr, entry->map_bitmap));
+		paddr = find_next_bit(entry->map_bitmap,
+							pblk->lm.sec_per_line, paddr + 1);
+		__ocssd_l2p_invalidate(pblk, line, paddr);
 	}
 
-	do_div(bench, geo->clba);
-	bench -= 1;
-	atomic_inc(&line->blk_aging);
+	if (bitmap_weight(entry->map_bitmap, lm->sec_bitmap_len) > 0) {
+		pr_err("pblk-trans: cannot correctly erased");
+		return -EFAULT;
+	}
 
-	weight = atomic_read(&line->blk_aging);
+	bench = lm->sec_per_line - geo->clba - 1;
+	weight = bitmap_weight(line->invalid_bitmap, lm->sec_per_line);
 
-	if (weight >= bench) {
+	if (weight > bench) {
+		/*
 		ocssd_l2p_add_to_gc(pblk, line);
-		gc->gc_enabled = 1;
 		gc->gc_trans_run = 1;
+		gc->gc_enabled = 1;
 		pblk_gc_should_start(pblk);
+		*/
 	}
+	return 0;
 }
 
 int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
@@ -258,26 +285,32 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct nvm_geo *geo = &dev->geo;
 
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct pblk_line *line = l_mg->trans_line;
 
-	int ret;
+	int ret = 0;
 	int nr_secs = geo->clba;
 	
 	u64 paddr = entry->paddr;
-	struct pblk_line *line = entry->line;
 
-	if (entry->cache_ptr == NULL || line == NULL)
+	if (entry->cache_ptr == NULL || entry->line == NULL)
 		return -EINVAL;
 
-	if (l_mg->trans_line->cur_sec + nr_secs >= pblk->lm.sec_per_line)
-		entry->line = pblk_line_replace_trans(pblk);
-	else
-		entry->line = l_mg->trans_line;
-
 	if (paddr != ADDR_EMPTY) 
-		ocssd_l2p_invalidate(pblk, line, paddr);
+		ret = ocssd_l2p_invalidate(pblk, entry, paddr);
+
+	if (ret)
+		goto fail_to_write;
+
+	if (line->cur_sec + (nr_secs + 1) >= pblk->lm.sec_per_line) {
+		entry->line = line;
+		line = pblk_line_replace_trans(pblk);
+	}
+
+	entry->line = line;
 
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
 
+fail_to_write:
 	return ret;
 }
 

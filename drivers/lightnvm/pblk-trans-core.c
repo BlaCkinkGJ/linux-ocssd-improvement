@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 OSLAB
+ *\n Copyright (C) 2019 OSLAB
  * Initial release: Gijun O <kijunking@pusan.ac.kr>
  *
  * This program is free software; you can redistribute it and/or
@@ -63,6 +63,7 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	struct pblk_trans_cache *cache = &pblk->cache;
 
 	struct pblk_line *line = pblk_line_get_first_trans(pblk);
+	struct pblk_line_meta *lm = &pblk->lm;
 
 	int index = 0;
 
@@ -80,7 +81,7 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		struct pblk_trans_entry *now = &dir->entry[index];
 		void *ptr;
 		now->id = index;
-		atomic_set(&now->hot_ratio, -1);
+		atomic_set(&now->hot_ratio, 0);
 		now->line = line;
 		now->paddr = ADDR_EMPTY;
 		atomic64_set(&now->bit_idx, 0);
@@ -89,9 +90,14 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		pr_info("write position: %p to %p", ptr, cache->bucket);
 
 		now->row_size = row_size;
+		now->map_bitmap = kzalloc(lm->sec_bitmap_len, GFP_ATOMIC);
+		if (!now->map_bitmap) {
+			pr_err("pblk-trans: ocssd bitmap setting failed\n");
+			return -ENOMEM;
+		}
 		now->cache_ptr = cache->bucket;
 		if(dir->op->write(pblk, now)) {
-			pr_err("pblk trans: ocssd write failed\n");
+			pr_err("pblk-trans: ocssd write failed\n");
 			return -EINVAL;
 		}
 
@@ -121,7 +127,7 @@ int pblk_trans_init(struct pblk *pblk)
 	struct pblk_gc *gc = &pblk->gc;
 
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
-	unsigned int remain = 0;
+	int ret;
 
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
 	if (!dir->entry) {
@@ -144,12 +150,14 @@ int pblk_trans_init(struct pblk *pblk)
 	cache->bucket = vmalloc(PBLK_TRANS_CHUNK_SIZE);
 	cache->bucket_sec = geo->clba;
 	if (!cache->bucket) {
+		pr_err("pblk-trans: cache bucket memory allocation fail\n");
 		return -ENOMEM;
 	}
 
 	/* TODO: optimization needed!!! */
 	cache->free_bitmap = vmalloc(PBLK_TRANS_CACHE_SIZE);
 	if (!cache->free_bitmap) {
+		pr_err("pblk-trans: cache free bitmap memory allocation fail\n");
 		return -ENOMEM;
 	}
 
@@ -159,9 +167,22 @@ int pblk_trans_init(struct pblk *pblk)
 #endif
 
 	/* original l2p table entry mapping */
-	pblk_trans_recov_from_mem(pblk);
+	ret = pblk_trans_recov_from_mem(pblk);
+	if (ret) {
+		pr_err("pblk-trans: recovery from memory fail\n");
+		return ret;
+	}
 #ifdef CONFIG_NVM_DEBUG
 	pr_info("pblk-trans: directory recovers from memory phase: OK\n");
+#endif
+
+	ret = pblk_trans_calc_init(pblk);
+	if (ret) {
+		pr_err("pblk-trans: directory update thread running fail\n");
+		return ret;
+	}
+#ifdef CONFIG_NVM_DEBUG
+	pr_info("pblk-trans: pblk-translation calc init : OK\n");
 #endif
 	
 	dir->enable = 1;
@@ -171,13 +192,6 @@ int pblk_trans_init(struct pblk *pblk)
 #endif
 
 	return 0;
-}
-
-static void pblk_trans_entry_update (struct pblk *pblk, sector_t entry_id)
-{
-	struct pblk_trans_dir *dir = &pblk->dir;
-	atomic_inc(&dir->entry[entry_id].hot_ratio);
-
 }
 
 static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
@@ -207,7 +221,7 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 	ptr = dir->entry[base].cache_ptr;
 
 	if (ptr == NULL) { /* cache miss */
-		pr_warn("pblk trans: cache miss occured in get sequence");
+		pr_warn("pblk-trans: cache miss occured in get sequence\n");
 		return ppa;
 	}
 
@@ -221,21 +235,7 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 		ppa = chk[offset];
 	}
 
-	pblk_trans_entry_update(pblk, base);
-
 	return ppa;
-}
-
-static void pblk_trans_directory_refresh (struct pblk *pblk) 
-{
-	struct pblk_trans_dir *dir = &pblk->dir;
-	unsigned int i;
-	for (i = 0; i < dir->entry_num; i++) {
-		int cur_hot = atomic_read(&dir->entry[i].hot_ratio);
-		if (cur_hot <= 0)
-			continue;
-		atomic_set(&dir->entry[i].hot_ratio, 0);
-	}
 }
 
 static int pblk_trans_victim_select (struct pblk *pblk)
@@ -247,11 +247,11 @@ static int pblk_trans_victim_select (struct pblk *pblk)
 	unsigned int i;
 
 	for (i = 0; i < dir->entry_num; i++) {
-		unsigned int hot_ratio = atomic_read(&dir->entry[i].hot_ratio);
+		int hot_ratio = atomic_read(&dir->entry[i].hot_ratio);
 		unsigned char *cache_ptr = NULL;
 
 		cache_ptr = dir->entry[i].cache_ptr;
-		if (hot_ratio < coldest && cache_ptr != NULL) {
+		if (hot_ratio <= coldest && cache_ptr != NULL) {
 			victim_entry = i;
 			coldest = hot_ratio;
 		}
@@ -260,17 +260,13 @@ static int pblk_trans_victim_select (struct pblk *pblk)
 	dir->entry[victim_entry].cache_ptr = cache->bucket;
 	victim_bit = atomic64_read(&dir->entry[victim_entry].bit_idx);
 	if(dir->op->write(pblk, &dir->entry[victim_entry])) {
-		pr_err("pblk trans: ocssd write failed\n");
+		pr_err("pblk-trans: ocssd write failed\n");
 		return -1;
 	}
 
 	clear_bit(victim_bit, cache->free_bitmap);
 	dir->entry[victim_entry].cache_ptr = NULL;
-	atomic_set(&dir->entry[victim_entry].hot_ratio, -1);
 	atomic64_set(&dir->entry[victim_entry].bit_idx, 0);
-
-
-	pblk_trans_directory_refresh(pblk);
 
 	return victim_bit;
 }
@@ -299,7 +295,7 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 
 	entry->cache_ptr = cache->bucket;
 	if(dir->op->read(pblk, entry)) {
-		pr_err("pblk trans: ocssd read failed\n");
+		pr_err("pblk-trans: ocssd read failed\n");
 		return -EINVAL;
 	}
 
@@ -307,7 +303,7 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, PBLK_TRANS_CHUNK_SIZE);
 	entry->cache_ptr = cache_chk;
 	atomic64_set(&entry->bit_idx, bit);
-	atomic_set(&entry->hot_ratio, 0);
+	atomic_add(PBLK_ACCEL_DEC_POINT, &entry->hot_ratio);
 	set_bit(bit, cache->free_bitmap);
 	return 0;
 }
@@ -317,7 +313,7 @@ struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache hit */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			struct ppa_addr err;
-			pr_err("pblk trans: map_get ==> update cache failed...");
+			pr_err("pblk-trans: map_get ==> update cache failed\n");
 			pblk_ppa_set_empty(&err);
 			return err;
 		}
@@ -361,7 +357,7 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 {
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache miss */
 		if (pblk_trans_update_cache (pblk, lba)) {
-			pr_err("pblk trans: map_set ==> update cache failed...");
+			pr_err("pblk-trans: map_set ==> update cache failed\n");
 			return -EINVAL;
 		}
 	}
@@ -374,7 +370,15 @@ void pblk_trans_free(struct pblk *pblk)
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	pr_info("pblk trans: free sequence executed");
+	int i;
+
+	pr_info("pblk-trans: free sequence executed");
+
+	for(i = 0; i < dir->entry_num; i++) {
+		struct pblk_trans_entry *entry = &dir->entry[i];
+		vfree(entry->cache_ptr);
+		kfree(entry->map_bitmap);
+	}
 
 	vfree(cache->trans_map);
 	vfree(cache->free_bitmap);

@@ -101,6 +101,7 @@ static u32 pblk_l2p_crc(struct pblk *pblk)
 static void pblk_l2p_free(struct pblk *pblk)
 {
 #ifndef PBLK_DISABLE_DFTL
+	pblk_trans_calc_exit(pblk);
 	pblk_trans_free(pblk);
 #endif
 #ifdef PBLK_DISABLE_DFTL
@@ -153,7 +154,14 @@ static int pblk_l2p_init(struct pblk *pblk, bool factory_init)
 	struct nvm_geo *geo = &dev->geo;
 
 	struct pblk_trans_dir *dir = &pblk->dir;
+
+	int entry_size = 8;
+
+	if (pblk->addrf_len < 32)
+		entry_size = 4;
 #endif
+
+
 
 	map_size = pblk_trans_map_size(pblk);
 
@@ -173,7 +181,7 @@ static int pblk_l2p_init(struct pblk *pblk, bool factory_init)
 
 #ifndef PBLK_DISABLE_D_FTL
 	map_secs = map_size;
-	do_div(map_secs, geo->csecs);
+	do_div(map_secs, entry_size);
 #endif
 	for (i = 0; i < map_secs; i++)
 		pblk_trans_map_set(pblk, i, ppa);
@@ -1303,6 +1311,7 @@ static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,
 #ifndef PBLK_DISABLE_D_FTL
 fail_free_trans:
 	pblk_trans_free(pblk);
+	pblk_trans_calc_exit(pblk);
 #endif
 fail_stop_writer:
 	pblk_writer_stop(pblk);

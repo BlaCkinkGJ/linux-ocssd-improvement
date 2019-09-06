@@ -25,6 +25,7 @@
 #include <linux/bio.h>
 #include <linux/module.h>
 #include <linux/kthread.h>
+#include <linux/kfifo.h>
 #include <linux/vmalloc.h>
 #include <linux/crc32.h>
 #include <linux/uuid.h>
@@ -58,14 +59,17 @@
 #define PBLK_DEFAULT_OP (11)
 
 /* D-FTL setting */
-//#define PBLK_DISABLE_D_FTL ;
 #define DEFAULT_CHUNK_SIZE \
 	(pblk->dev->geo.clba * pblk->dev->geo.csecs)
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
 #define PBLK_TRANS_CACHE_SIZE (3) /* Cache size */
-//#define PBLK_TRANS_DEBUG
+
+#define PBLK_ACCEL_DEC_POINT 1000
+
+#define TRANS_UPDATE_MSECS 10
+#define TRANS_QUEUE_SIZE (sizeof(struct pblk_update_item) * PAGE_SIZE)
 
 enum {
 	PBLK_READ		= READ,
@@ -439,8 +443,6 @@ struct pblk_line {
 	int gc_group;			/* PBLK_LINEGC_X */
 	struct list_head list;		/* Free, GC lists */
 
-	atomic_t blk_aging;	
-
 	unsigned long *lun_bitmap;	/* Bitmap for LUNs mapped in line */
 
 	struct nvm_chk_meta *chks;	/* Chunks forming line */
@@ -479,7 +481,7 @@ struct pblk_line {
 	spinlock_t lock;		/* Necessary for invalid_bitmap only */
 };
 
-#define PBLK_DATA_LINES 20
+#define PBLK_DATA_LINES 30
 
 enum {
 	PBLK_KMALLOC_META = 1,
@@ -596,6 +598,16 @@ struct pblk_addrf {
 	int sec_ws_stripe;
 };
 
+enum {
+	PBLK_ITEM_TYPE_DATA = 0,
+	PBLK_ITEM_TYPE_JOURNAL = 1,
+};
+
+struct pblk_update_item {
+	int type;
+	sector_t lba;
+};
+
 struct pblk_trans_cache {
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
@@ -615,6 +627,7 @@ struct pblk_trans_entry {
 	/* When you use the size then you have to multiply 'entry_size' */
 	size_t row_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	atomic64_t bit_idx;
+	unsigned long *map_bitmap;	/* Bitmap for mapped sectors in line */
 	unsigned char *cache_ptr; /* start location of cache */
 };
 
@@ -628,6 +641,14 @@ struct pblk_trans_dir {
 	size_t entry_num;
 	int enable; /* Initial recovery successful then this is true */
 	struct pblk_trans_entry *entry;
+
+	struct kfifo fifo;
+
+	struct timer_list dir_timer;
+
+	struct task_struct *refresh_ts;
+	struct task_struct *update_ts;
+
 	struct pblk_trans_op *op;
 };
 
@@ -972,8 +993,6 @@ int pblk_rl_is_limit(struct pblk_rl *rl);
 /*
  * pblk trans core
  */
-
-#define PBLK_TRANS_IO_QD 128
 int pblk_trans_init(struct pblk *pblk);
 struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
@@ -982,14 +1001,22 @@ size_t pblk_trans_map_size(struct pblk *pblk);
 void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src, 
 		size_t size);
 void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset);
+
 /*
  * pblk trans io
  */
-
 int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry);
 int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
 int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry);
 int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
+
+/*
+ * pblk trans calc
+ */
+void pblk_trans_update_kick(struct pblk *pblk);
+int pblk_trans_calc_init(struct pblk *pblk);
+void pblk_trans_calc_exit(struct pblk *pblk);
+
 
 /*
  * pblk sysfs
