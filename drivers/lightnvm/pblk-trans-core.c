@@ -84,13 +84,14 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		atomic_set(&now->hot_ratio, 0);
 		now->line = line;
 		now->paddr = ADDR_EMPTY;
-		atomic64_set(&now->bit_idx, 0);
+		atomic_set(&now->bit_idx, -1);
 		ptr = &pblk->trans_map[index*PBLK_TRANS_CHUNK_SIZE];
 		pblk_trans_mem_copy(pblk, cache->bucket, ptr, PBLK_TRANS_CHUNK_SIZE);
 		pr_info("write position: %p to %p", ptr, cache->bucket);
 
 		now->row_size = row_size;
 		now->map_bitmap = kzalloc(lm->sec_bitmap_len, GFP_ATOMIC);
+
 		if (!now->map_bitmap) {
 			pr_err("pblk-trans: ocssd bitmap setting failed\n");
 			return -ENOMEM;
@@ -135,12 +136,10 @@ int pblk_trans_init(struct pblk *pblk)
 	}
 
 	dir->op = &trans_op;
-#ifdef CONFIG_NVM_DEBUG
 	pr_info("pblk-trans: directory initialization phase: OK\n");
-#endif
 
 	/* cache initialization */
-	cache->size = PBLK_TRANS_CHUNK_SIZE * PBLK_TRANS_CACHE_SIZE;
+	cache->size = PBLK_TRANS_CHUNK_SIZE * dir->entry_num;
 	cache->trans_map = vmalloc(cache->size); 
 	if (!cache->trans_map) {
 		cache->size = 0;
@@ -155,16 +154,14 @@ int pblk_trans_init(struct pblk *pblk)
 	}
 
 	/* TODO: optimization needed!!! */
-	cache->free_bitmap = vmalloc(PBLK_TRANS_CACHE_SIZE);
+	cache->free_bitmap = vmalloc(dir->entry_num);
 	if (!cache->free_bitmap) {
 		pr_err("pblk-trans: cache free bitmap memory allocation fail\n");
 		return -ENOMEM;
 	}
 
-	bitmap_zero(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
-#ifdef CONFIG_NVM_DEBUG
+	bitmap_zero(cache->free_bitmap, dir->entry_num);
 	pr_info("pblk-trans: cache initialization phase: OK\n");
-#endif
 
 	/* original l2p table entry mapping */
 	ret = pblk_trans_recov_from_mem(pblk);
@@ -172,36 +169,40 @@ int pblk_trans_init(struct pblk *pblk)
 		pr_err("pblk-trans: recovery from memory fail\n");
 		return ret;
 	}
-#ifdef CONFIG_NVM_DEBUG
 	pr_info("pblk-trans: directory recovers from memory phase: OK\n");
-#endif
 
 	ret = pblk_trans_calc_init(pblk);
 	if (ret) {
 		pr_err("pblk-trans: directory update thread running fail\n");
 		return ret;
 	}
-#ifdef CONFIG_NVM_DEBUG
-	pr_info("pblk-trans: pblk-translation calc init : OK\n");
-#endif
+	pr_info("pblk-trans: pblk-translation calc init: ok\n");
+
+	ret = pblk_trans_evict_init(pblk);
+	if (ret) {
+		pr_err("pblk-trans: directory update thread running fail\n");
+		return ret;
+	}
+	pr_info("pblk-trans: pblk-translation evict init: ok\n");
 	
 	dir->enable = 1;
 	gc->gc_trans_run = 1;
-#ifdef CONFIG_NVM_DEBUG
 	pr_info("pblk-trans: Ready to use directory: OK\n");
-#endif
 
 	return 0;
 }
 
 static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
 	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_cache *cache = &pblk->cache;
+	struct pblk_trans_entry *entry;
 
 	sector_t base = lba;
 	void *ptr;
 
 	do_div(base, dir->entry[0].row_size);
-	ptr = dir->entry[base].cache_ptr;
+	entry = &dir->entry[base];
+	ptr = entry->cache_ptr;
 	return ptr != NULL;
 }
 
@@ -238,39 +239,6 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 	return ppa;
 }
 
-static int pblk_trans_victim_select (struct pblk *pblk)
-{
-	struct pblk_trans_dir *dir = &pblk->dir;
-	struct pblk_trans_cache *cache = &pblk->cache;
-	int victim_bit = -1, victim_entry = 0;
-	int coldest = INT_MAX;
-	unsigned int i;
-
-	for (i = 0; i < dir->entry_num; i++) {
-		int hot_ratio = atomic_read(&dir->entry[i].hot_ratio);
-		unsigned char *cache_ptr = NULL;
-
-		cache_ptr = dir->entry[i].cache_ptr;
-		if (hot_ratio <= coldest && cache_ptr != NULL) {
-			victim_entry = i;
-			coldest = hot_ratio;
-		}
-	}
-	pblk_trans_mem_copy(pblk, cache->bucket, dir->entry[victim_entry].cache_ptr, PBLK_TRANS_CHUNK_SIZE);
-	dir->entry[victim_entry].cache_ptr = cache->bucket;
-	victim_bit = atomic64_read(&dir->entry[victim_entry].bit_idx);
-	if(dir->op->write(pblk, &dir->entry[victim_entry])) {
-		pr_err("pblk-trans: ocssd write failed\n");
-		return -1;
-	}
-
-	clear_bit(victim_bit, cache->free_bitmap);
-	dir->entry[victim_entry].cache_ptr = NULL;
-	atomic64_set(&dir->entry[victim_entry].bit_idx, 0);
-
-	return victim_bit;
-}
-
 static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
@@ -284,13 +252,16 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	do_div(base, dir->entry[0].row_size);
 	entry = &dir->entry[base];
 
-	bit = find_first_zero_bit(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+retry_get_bit:
+	bit = find_first_zero_bit(cache->free_bitmap, 
+			dir->entry_num);
 
-	if (bit >= PBLK_TRANS_CACHE_SIZE) { /* victim selected */
-		bit = pblk_trans_victim_select(pblk);
-		if (bit == -1) {
-			return -EINVAL;
-		}
+	if (bit >= dir->entry_num) {
+		spin_unlock(&cache->lock);
+		pblk_trans_evict_kick(pblk);
+		io_schedule();
+		spin_lock(&cache->lock);
+		goto retry_get_bit;
 	}
 
 	entry->cache_ptr = cache->bucket;
@@ -302,7 +273,7 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	cache_chk = &cache->trans_map[bit*PBLK_TRANS_CHUNK_SIZE];
 	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, PBLK_TRANS_CHUNK_SIZE);
 	entry->cache_ptr = cache_chk;
-	atomic64_set(&entry->bit_idx, bit);
+	atomic_set(&entry->bit_idx, bit);
 	atomic_add(PBLK_ACCEL_DEC_POINT, &entry->hot_ratio);
 	set_bit(bit, cache->free_bitmap);
 	return 0;
@@ -310,15 +281,30 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 
 struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 {
+	struct pblk_trans_cache *cache = &pblk->cache;
+	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_entry *entry;
+	struct ppa_addr ppa;
+
+	sector_t base = lba;
+
+	do_div(base, dir->entry[0].row_size);
+	entry = &dir->entry[base];
+
+	spin_lock(&cache->lock);
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache hit */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			struct ppa_addr err;
 			pr_err("pblk-trans: map_get ==> update cache failed\n");
 			pblk_ppa_set_empty(&err);
+			spin_unlock(&cache->lock);
 			return err;
 		}
 	}
-	return pblk_trans_ppa_get(pblk, lba);
+	ppa = pblk_trans_ppa_get(pblk, lba);
+	spin_unlock(&cache->lock);
+
+	return ppa;
 }
 
 static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
@@ -355,14 +341,27 @@ static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 		struct ppa_addr ppa)
 {
+	struct pblk_trans_cache *cache = &pblk->cache;
+	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_entry *entry;
+	sector_t base = lba;
+	int ret;
+
+	do_div(base, dir->entry[0].row_size);
+	entry = &dir->entry[base];
+
+	spin_lock(&cache->lock);
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache miss */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			pr_err("pblk-trans: map_set ==> update cache failed\n");
+			spin_unlock(&cache->lock);
 			return -EINVAL;
 		}
 	}
 
-	return pblk_trans_ppa_set(pblk, lba, ppa);
+	ret = pblk_trans_ppa_set(pblk, lba, ppa);
+	spin_unlock(&cache->lock);
+	return ret;
 }
 
 void pblk_trans_free(struct pblk *pblk)

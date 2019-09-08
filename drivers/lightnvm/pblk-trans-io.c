@@ -16,16 +16,8 @@
 
 #include "pblk.h"
 
-/**
- * TODO: Make line close.
- * My policy is to:
- *	1. If the first line is full then move to next line
- *	2. Write the next line and that line is fulled then move next line.
- *	3. If we use the all line then we choose the (1)'s line to victim
- *	4. Check the all global translation directory entries.
- *	5. If entry has the victim lines information then it copies to the new line
- *	   and updates the entry information
- */
+static DECLARE_RWSEM(rw_sem);
+
 static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
@@ -182,10 +174,12 @@ int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	int ret;
 
+	down_read(&rw_sem);
 	if (entry->line == NULL || entry->paddr == ADDR_EMPTY) {
 		return -EINVAL;
 	}
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_READ);
+	up_read(&rw_sem);
 	
 	return ret;
 }
@@ -230,7 +224,7 @@ static void __ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u6
 	WARN_ON(line->state == PBLK_LINESTATE_FREE);
 
 	if (test_and_set_bit(paddr, line->invalid_bitmap)) {
-		WARN_ONCE(1, "pblk: double invalidate\n");
+		WARN_ONCE(1, "pblk trans: double invalidate\n");
 		spin_unlock(&line->lock);
 		return ;
 	}
@@ -257,6 +251,7 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 		WARN_ON(!test_and_clear_bit(paddr, entry->map_bitmap));
 		paddr = find_next_bit(entry->map_bitmap,
 							pblk->lm.sec_per_line, paddr + 1);
+		trace_printk("%llu\n", paddr);
 		__ocssd_l2p_invalidate(pblk, line, paddr);
 	}
 
@@ -269,12 +264,10 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 	weight = bitmap_weight(line->invalid_bitmap, lm->sec_per_line);
 
 	if (weight > bench) {
-		/*
 		ocssd_l2p_add_to_gc(pblk, line);
 		gc->gc_trans_run = 1;
 		gc->gc_enabled = 1;
 		pblk_gc_should_start(pblk);
-		*/
 	}
 	return 0;
 }
@@ -289,11 +282,14 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 
 	int ret = 0;
 	int nr_secs = geo->clba;
-	
+
 	u64 paddr = entry->paddr;
 
-	if (entry->cache_ptr == NULL || entry->line == NULL)
+	down_write(&rw_sem);
+	if (entry->cache_ptr == NULL || entry->line == NULL) {
+		pr_err("pblk-trans: incorrect write status...\n");
 		return -EINVAL;
+	}
 
 	if (paddr != ADDR_EMPTY) 
 		ret = ocssd_l2p_invalidate(pblk, entry, paddr);
@@ -309,6 +305,8 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	entry->line = line;
 
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
+
+	up_write(&rw_sem);
 
 fail_to_write:
 	return ret;

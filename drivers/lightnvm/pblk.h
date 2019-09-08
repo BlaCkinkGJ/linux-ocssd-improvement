@@ -64,12 +64,14 @@
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (3) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (5) /* Cache size */
 
 #define PBLK_ACCEL_DEC_POINT 1000
 
-#define TRANS_UPDATE_MSECS 10
+#define TRANS_UPDATE_MSECS 250
 #define TRANS_QUEUE_SIZE (sizeof(struct pblk_update_item) * PAGE_SIZE)
+
+#define PBLK_TRANS_EVICT_MSECS 1000
 
 enum {
 	PBLK_READ		= READ,
@@ -609,26 +611,34 @@ struct pblk_update_item {
 };
 
 struct pblk_trans_cache {
-	/* When you use the size then you have to multiply 'entry_size' */
-	size_t size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
-	unsigned char *trans_map; /* compatible type of the mapping table */
-	                          /* (u64 or u32 casting is necessary!) */
-	unsigned char *bucket; /* It is a kind of write buffer */
-	size_t bucket_sec;
-	unsigned long *free_bitmap;
+	size_t size;                     /* number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
+	size_t bucket_sec;               /* cache bucket sectors */
+
+	int usage;                       /* current cache block usage */
+
+	unsigned char *bucket;           /* it is a kind of write buffer */
+	unsigned char *trans_map;        /* compatible type of the mapping table 
+							            (u64 or u32 casting is necessary!) */
+	unsigned long *free_bitmap;      /* this contains location of free blocks in cache */
+
+	struct task_struct *evict_ts;     /* evict task struct this runs forever */
+	struct timer_list evict_timer; /* evict timer this runs every PBLK_TRANS_EVICT_MSECS */
+
 	spinlock_t lock;
 };
 
 struct pblk_trans_entry {
-	int id;
-	atomic_t hot_ratio; /* TODO: atomic!!!*/
+	int id;                     /* id of this entry */
+
 	struct pblk_line *line;
 	u64 paddr;
-	/* When you use the size then you have to multiply 'entry_size' */
-	size_t row_size; /* The number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
-	atomic64_t bit_idx;
+	unsigned char *cache_ptr;   /* start location of cache */
+
 	unsigned long *map_bitmap;	/* Bitmap for mapped sectors in line */
-	unsigned char *cache_ptr; /* start location of cache */
+	size_t row_size;            /* The number of the lba. 
+								   NOT REAL MEMORY ALLOCATION SIZE */
+	atomic_t bit_idx;
+	atomic_t hot_ratio;
 };
 
 struct pblk_trans_op {
@@ -638,18 +648,18 @@ struct pblk_trans_op {
 };
 
 struct pblk_trans_dir {
-	size_t entry_num;
-	int enable; /* Initial recovery successful then this is true */
-	struct pblk_trans_entry *entry;
+	size_t entry_num;               /* number of entry in this directory */
+	int enable;						/* initial recovery successful then this is true */
 
-	struct kfifo fifo;
+	struct kfifo fifo;              /* manage to incoming data line write request */
 
-	struct timer_list dir_timer;
+	struct timer_list dir_timer;    /* directory refresh timer */
 
-	struct task_struct *refresh_ts;
-	struct task_struct *update_ts;
+	struct task_struct *refresh_ts; /* refresh task struct */
+	struct task_struct *update_ts;  /* update task struct */
 
-	struct pblk_trans_op *op;
+	struct pblk_trans_entry *entry; /* this contains entries */
+	struct pblk_trans_op *op;       /* directory operation is mapped in this place */
 };
 
 struct pblk {
@@ -1001,6 +1011,9 @@ size_t pblk_trans_map_size(struct pblk *pblk);
 void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src, 
 		size_t size);
 void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset);
+int pblk_trans_evict_init(struct pblk *pblk);
+void pblk_trans_evict_exit(struct pblk *pblk);
+void pblk_trans_evict_kick(struct pblk *pblk);
 
 /*
  * pblk trans io

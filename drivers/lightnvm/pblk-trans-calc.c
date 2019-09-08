@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  * 
- * pblk-trans-core.c - pblk's global translation directory and cached mapping table
+ * pblk-trans-calc.c - pblk's global translation directory hot ratio calculates
  */
 
 #include "pblk.h"
