@@ -9,4 +9,5 @@ pblk-y				:= pblk-init.o pblk-core.o pblk-rb.o \
 				   pblk-write.o pblk-cache.o pblk-read.o \
 				   pblk-gc.o pblk-recovery.o pblk-map.o \
 				   pblk-rl.o pblk-sysfs.o pblk-trans-core.o \
-				   pblk-trans-io.o pblk-trans-calc.o
+				   pblk-trans-io.o pblk-trans-calc.o \
+				   pblk-trans-evict.o

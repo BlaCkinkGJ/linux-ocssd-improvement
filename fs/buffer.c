@@ -3086,6 +3086,7 @@ static int submit_bh_wbc(int op, int op_flags, struct buffer_head *bh,
 
 	bio->bi_end_io = end_bio_bh_io_sync;
 	bio->bi_private = bh;
+	bio->content_type = bh->content_type;
 
 	/* Take care of bh's that straddle the end of the device */
 	guard_bio_eod(op, bio);

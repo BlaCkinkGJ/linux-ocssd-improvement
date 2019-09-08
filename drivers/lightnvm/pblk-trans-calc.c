@@ -38,8 +38,11 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 
 	while (kfifo_avail(&dir->fifo)) {
 		struct pblk_update_item item;
+		struct pblk_trans_entry *entry;
+
 		int type;
-		unsigned int ret;
+		unsigned int ret, hot_ratio;
+
 		const size_t copy_size = sizeof(struct pblk_update_item);
 		sector_t base;
 
@@ -52,18 +55,21 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 
 		do_div(base, dir->entry[0].row_size);
 
-		if (&dir->entry[base].cache_ptr == NULL)
+		entry = &dir->entry[base];
+		hot_ratio = atomic_read(&entry->bit_idx);
+
+		if (hot_ratio == -1)
 			continue;
 
 		switch(type) {
 			case PBLK_ITEM_TYPE_DATA:
-				atomic_add(20, &dir->entry[base].hot_ratio);
+				atomic_add(20, &entry->hot_ratio);
 				break;
 			case PBLK_ITEM_TYPE_JOURNAL:
-				atomic_add(5, &dir->entry[base].hot_ratio);
+				atomic_add(5, &entry->hot_ratio);
 				break;
 			default:
-				atomic_inc(&dir->entry[base].hot_ratio);
+				atomic_inc(&entry->hot_ratio);
 				break;
 		}
 	}
@@ -80,13 +86,14 @@ static void pblk_trans_hot_ratio_decrement(struct pblk *pblk)
 
 	for (i = 0; i < dir->entry_num; i++) {
 		int hot_ratio = atomic_read(&dir->entry[i].hot_ratio);
+		struct pblk_trans_entry *entry = &dir->entry[i];
 		if (hot_ratio <= 0)
 			continue;
 		do_div(hot_ratio, PBLK_ACCEL_DEC_POINT);
 		if (hot_ratio == 0)
-			atomic_dec(&dir->entry[i].hot_ratio);
+			atomic_dec(&entry->hot_ratio);
 		else
-			atomic_sub(hot_ratio, &dir->entry[i].hot_ratio);
+			atomic_sub(hot_ratio, &entry->hot_ratio);
 	}
 }
 

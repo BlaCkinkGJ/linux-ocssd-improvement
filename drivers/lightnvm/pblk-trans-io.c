@@ -150,7 +150,7 @@ next_trans_rq:
 		goto free_rqd_dma;
 	}
 
-	// atomic_dec(&pblk->inflight_io);
+	atomic_dec(&pblk->inflight_io);
 
 	if (rqd.error) {
 		if (dir == PBLK_WRITE)
@@ -251,7 +251,6 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 		WARN_ON(!test_and_clear_bit(paddr, entry->map_bitmap));
 		paddr = find_next_bit(entry->map_bitmap,
 							pblk->lm.sec_per_line, paddr + 1);
-		trace_printk("%llu\n", paddr);
 		__ocssd_l2p_invalidate(pblk, line, paddr);
 	}
 
@@ -265,7 +264,7 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 
 	if (weight > bench) {
 		ocssd_l2p_add_to_gc(pblk, line);
-		gc->gc_trans_run = 1;
+		// gc->gc_trans_run = 1; /* forced run */
 		gc->gc_enabled = 1;
 		pblk_gc_should_start(pblk);
 	}
@@ -280,13 +279,15 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
 	struct pblk_line *line = l_mg->trans_line;
 
-	int ret = 0;
+	int ret = 0, hot_ratio;
 	int nr_secs = geo->clba;
 
 	u64 paddr = entry->paddr;
 
 	down_write(&rw_sem);
-	if (entry->cache_ptr == NULL || entry->line == NULL) {
+	hot_ratio = atomic_read(&entry->bit_idx);
+	if (entry->cache_ptr == NULL || entry->line == NULL
+			|| hot_ratio == -1) {
 		pr_err("pblk-trans: incorrect write status...\n");
 		return -EINVAL;
 	}

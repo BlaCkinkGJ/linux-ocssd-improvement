@@ -99,6 +99,13 @@ struct blk_issue_stat {
  * stacking drivers)
  */
 struct bio {
+	/*
+	 * 0: DATA TYPE
+	 * 1: JOURNAL TYPE
+	 */
+	unsigned int content_type;
+
+
 	struct bio		*bi_next;	/* request queue link */
 	struct gendisk		*bi_disk;
 	unsigned int		bi_opf;		/* bottom bits req flags,

@@ -85,7 +85,6 @@ static int pblk_trans_bench_calculate(struct pblk *pblk)
 
 void pblk_trans_evict_run(struct pblk *pblk)
 {
-	struct pblk_trans_dir *dir = &pblk->dir;
 	struct pblk_trans_cache *cache = &pblk->cache;
 
 	int ret;
@@ -93,11 +92,14 @@ void pblk_trans_evict_run(struct pblk *pblk)
 
 	static int bench = -1;
 
-	spin_lock(&cache->lock);
+	while(!spin_trylock(&cache->lock)) {
+		io_schedule();
+	}
+
 	if(bench == -1)
 		bench = pblk_trans_bench_calculate(pblk);
 
-	weight = bitmap_weight(cache->free_bitmap, dir->entry_num);
+	weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 
 	while (weight > bench) {
 		ret =  __pblk_trans_evict_run(pblk);
@@ -105,7 +107,7 @@ void pblk_trans_evict_run(struct pblk *pblk)
 			pr_warn("pblk trans: evict sequence something wrong\n");
 			break;
 		}
-		weight = bitmap_weight(cache->free_bitmap, dir->entry_num);
+		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 	}
 	spin_unlock(&cache->lock);
 }
