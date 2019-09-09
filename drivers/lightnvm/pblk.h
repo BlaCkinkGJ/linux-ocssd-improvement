@@ -64,7 +64,7 @@
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (10) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (5) /* Cache size */
 
 #define PBLK_ACCEL_DEC_POINT 1000
 

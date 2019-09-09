@@ -150,9 +150,6 @@ static int pblk_l2p_init(struct pblk *pblk, bool factory_init)
 	sector_t map_secs = pblk->rl.nr_secs;
 
 #ifndef PBLK_DISABLE_D_FTL
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
-
 	struct pblk_trans_dir *dir = &pblk->dir;
 
 	int entry_size = 8;
