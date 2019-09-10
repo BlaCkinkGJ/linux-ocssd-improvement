@@ -1308,7 +1308,9 @@ static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,
 #ifndef PBLK_DISABLE_D_FTL
 fail_free_trans:
 	pblk_trans_free(pblk);
+#ifdef PBLK_EVICT_THREAD_ENABLE
 	pblk_trans_evict_exit(pblk);
+#endif
 	pblk_trans_calc_exit(pblk);
 #endif
 fail_stop_writer:

@@ -621,9 +621,6 @@ struct pblk_trans_cache {
 							            (u64 or u32 casting is necessary!) */
 	unsigned long *free_bitmap;      /* this contains location of free blocks in cache */
 
-	struct task_struct *evict_ts;     /* evict task struct this runs forever */
-	struct timer_list evict_timer; /* evict timer this runs every PBLK_TRANS_EVICT_MSECS */
-
 	spinlock_t lock;
 };
 
@@ -639,6 +636,7 @@ struct pblk_trans_entry {
 								   NOT REAL MEMORY ALLOCATION SIZE */
 	atomic_t bit_idx;
 	atomic_t hot_ratio;
+	atomic64_t hit_ratio;
 };
 
 struct pblk_trans_op {
@@ -1011,9 +1009,6 @@ size_t pblk_trans_map_size(struct pblk *pblk);
 void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src, 
 		size_t size);
 void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset);
-int pblk_trans_evict_init(struct pblk *pblk);
-void pblk_trans_evict_exit(struct pblk *pblk);
-void pblk_trans_evict_kick(struct pblk *pblk);
 
 /*
  * pblk trans io
@@ -1030,6 +1025,15 @@ void pblk_trans_update_kick(struct pblk *pblk);
 int pblk_trans_calc_init(struct pblk *pblk);
 void pblk_trans_calc_exit(struct pblk *pblk);
 
+/*
+ * pblk trans evict
+ */
+void pblk_trans_evict_run(struct pblk *pblk);
+#ifdef PBLK_EVICT_THREAD_ENABLE
+int pblk_trans_evict_init(struct pblk *pblk);
+void pblk_trans_evict_exit(struct pblk *pblk);
+void pblk_trans_evict_kick(struct pblk *pblk);
+#endif
 
 /*
  * pblk sysfs

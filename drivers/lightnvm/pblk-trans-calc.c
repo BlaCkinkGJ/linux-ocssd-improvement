@@ -15,6 +15,8 @@
 
 #include "pblk.h"
 
+static DEFINE_SPINLOCK(update_lock);
+
 void pblk_trans_update_kick(struct pblk *pblk)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
@@ -33,7 +35,8 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	if (!dir->enable)
+
+	if (!spin_trylock(&update_lock) && !dir->enable)
 		return ;
 
 	while (kfifo_avail(&dir->fifo)) {
@@ -47,8 +50,10 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 		sector_t base;
 
 		ret = kfifo_out(&dir->fifo, &item, copy_size);
-		if (ret != copy_size)
+		if (ret != copy_size) {
+			spin_unlock(&update_lock);
 			return ;
+		}
 		
 		type = item.type;
 		base = item.lba;
@@ -73,6 +78,7 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 				break;
 		}
 	}
+	spin_unlock(&update_lock);
 
 }
 

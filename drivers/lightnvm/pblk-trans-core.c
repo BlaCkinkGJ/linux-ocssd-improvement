@@ -180,12 +180,14 @@ int pblk_trans_init(struct pblk *pblk)
 	}
 	pr_info("pblk-trans: pblk-translation calc init: ok\n");
 
+#ifdef PBLK_EVICT_THREAD_ENABLE
 	ret = pblk_trans_evict_init(pblk);
 	if (ret) {
 		pr_err("pblk-trans: directory update thread running fail\n");
 		return ret;
 	}
 	pr_info("pblk-trans: pblk-translation evict init: ok\n");
+#endif
 	
 	dir->enable = 1;
 	gc->gc_trans_run = 1;
@@ -204,6 +206,7 @@ static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
 	do_div(base, dir->entry[0].row_size);
 	entry = &dir->entry[base];
 
+	atomic64_inc(&entry->hit_ratio);
 	hot_ratio = atomic_read(&entry->bit_idx);
 	return hot_ratio != -1;
 }
@@ -260,8 +263,7 @@ retry_get_bit:
 
 	if (bit >= PBLK_TRANS_CACHE_SIZE) {
 		spin_unlock(&cache->lock);
-		pblk_trans_evict_kick(pblk);
-		io_schedule();
+		pblk_trans_evict_run(pblk);
 		spin_lock(&cache->lock);
 		goto retry_get_bit;
 	}

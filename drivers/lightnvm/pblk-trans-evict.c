@@ -67,13 +67,12 @@ static int pblk_trans_bench_calculate(struct pblk *pblk)
 {
 	int bench;
 
-	if (PBLK_TRANS_CACHE_SIZE > 3) {
-		/* setting the benchmark to 20% */
+	if (PBLK_TRANS_CACHE_SIZE > 5) {
 		bench = PBLK_TRANS_CACHE_SIZE;
-		do_div(bench, 5);
-		bench = bench == 0 ? 1 : bench;
-		bench *= 2;
-		bench += 1;
+		do_div(bench, 3); /* 33.33% contents evict */
+		bench = PBLK_TRANS_CACHE_SIZE - bench;
+	} else if (PBLK_TRANS_CACHE_SIZE > 3) {
+		bench = 2;
 	} else {
 		bench = 1;
 	}
@@ -90,8 +89,8 @@ void pblk_trans_evict_run(struct pblk *pblk)
 
 	static int bench = -1;
 
-	while(!spin_trylock(&cache->lock)) {
-		io_schedule();
+	if (!spin_trylock(&cache->lock)) {
+		return ;
 	}
 
 	if(bench == -1)
@@ -109,6 +108,8 @@ void pblk_trans_evict_run(struct pblk *pblk)
 	}
 	spin_unlock(&cache->lock);
 }
+
+#ifdef PBLK_EVICT_THREAD_ENABLE
 
 void pblk_trans_evict_kick(struct pblk *pblk)
 {
@@ -172,3 +173,5 @@ void pblk_trans_evict_exit(struct pblk *pblk)
 	if (cache->evict_ts)
 		kthread_stop(cache->evict_ts);
 }
+
+#endif

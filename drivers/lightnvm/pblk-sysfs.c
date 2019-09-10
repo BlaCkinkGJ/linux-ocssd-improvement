@@ -318,14 +318,15 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		int i;
 
 		sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"id\tline\tpaddr\thot\tbit\tcache\n");
+				"id\tline\tpaddr\thot\thit\tbit\tcache\n");
 		for(i = 0; i < dir->entry_num; i++) {
 			struct pblk_trans_entry *entry = &dir->entry[i];
 			int hot = atomic_read(&entry->hot_ratio);
+			u64 hit = atomic64_read(&entry->hit_ratio);
 			int bit_idx = atomic_read(&entry->bit_idx);
 			sz += snprintf(page + sz, PAGE_SIZE - sz,
-					"%d\t%d\t%lld\t%d\t%d\t%p\n",
-					i, entry->line->id, entry->paddr, hot, bit_idx, entry->cache_ptr);
+					"%d\t%d\t%lld\t%d\t%llu\t%d\t%p\n",
+					i, entry->line->id, entry->paddr, hot, hit, bit_idx, entry->cache_ptr);
 
 		}
 	}
