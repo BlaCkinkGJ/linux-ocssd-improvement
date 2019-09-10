@@ -74,8 +74,6 @@ static int pblk_trans_bench_calculate(struct pblk *pblk)
 		bench = bench == 0 ? 1 : bench;
 		bench *= 2;
 		bench += 1;
-	} else if(PBLK_TRANS_CACHE_SIZE == 3) {
-		bench = 2;
 	} else {
 		bench = 1;
 	}
