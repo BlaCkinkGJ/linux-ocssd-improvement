@@ -64,7 +64,7 @@
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (5) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (16) /* Cache size */
 
 #define PBLK_ACCEL_DEC_POINT 1000
 
@@ -637,6 +637,8 @@ struct pblk_trans_entry {
 	atomic_t bit_idx;
 	atomic_t hot_ratio;
 	atomic64_t hit_ratio;
+
+	unsigned long time_stamp;
 };
 
 struct pblk_trans_op {
@@ -651,9 +653,6 @@ struct pblk_trans_dir {
 
 	struct kfifo fifo;              /* manage to incoming data line write request */
 
-	struct timer_list dir_timer;    /* directory refresh timer */
-
-	struct task_struct *refresh_ts; /* refresh task struct */
 	struct task_struct *update_ts;  /* update task struct */
 
 	struct pblk_trans_entry *entry; /* this contains entries */
@@ -1021,9 +1020,12 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
 /*
  * pblk trans calc
  */
+void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item);
+#ifdef PBLK_CALC_THREAD_ENABLE
 void pblk_trans_update_kick(struct pblk *pblk);
 int pblk_trans_calc_init(struct pblk *pblk);
 void pblk_trans_calc_exit(struct pblk *pblk);
+#endif
 
 /*
  * pblk trans evict

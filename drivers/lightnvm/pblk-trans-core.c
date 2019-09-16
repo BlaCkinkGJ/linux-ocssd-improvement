@@ -85,6 +85,7 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		now->line = line;
 		now->paddr = ADDR_EMPTY;
 		atomic_set(&now->bit_idx, 0);
+		atomic64_set(&now->hit_ratio, 0);
 		ptr = &pblk->trans_map[index*PBLK_TRANS_CHUNK_SIZE];
 		pblk_trans_mem_copy(pblk, cache->bucket, ptr, PBLK_TRANS_CHUNK_SIZE);
 		pr_info("write position: %p to %p", ptr, cache->bucket);
@@ -173,12 +174,14 @@ int pblk_trans_init(struct pblk *pblk)
 	}
 	pr_info("pblk-trans: directory recovers from memory phase: OK\n");
 
+#ifdef PBLK_CALC_THREAD_ENABLE
 	ret = pblk_trans_calc_init(pblk);
 	if (ret) {
 		pr_err("pblk-trans: directory update thread running fail\n");
 		return ret;
 	}
 	pr_info("pblk-trans: pblk-translation calc init: ok\n");
+#endif
 
 #ifdef PBLK_EVICT_THREAD_ENABLE
 	ret = pblk_trans_evict_init(pblk);
@@ -200,15 +203,19 @@ static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
 	struct pblk_trans_dir *dir = &pblk->dir;
 	struct pblk_trans_entry *entry;
 
-	int hot_ratio;
+	int bit_idx;
 	sector_t base = lba;
 
 	do_div(base, dir->entry[0].row_size);
 	entry = &dir->entry[base];
 
-	atomic64_inc(&entry->hit_ratio);
-	hot_ratio = atomic_read(&entry->bit_idx);
-	return hot_ratio != -1;
+	entry->time_stamp = jiffies;
+	bit_idx = atomic_read(&entry->bit_idx);
+
+	if(bit_idx != -1)
+		atomic64_inc(&entry->hit_ratio);
+
+	return bit_idx != -1;
 }
 
 static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk, 
@@ -262,9 +269,7 @@ retry_get_bit:
 			PBLK_TRANS_CACHE_SIZE);
 
 	if (bit >= PBLK_TRANS_CACHE_SIZE) {
-		spin_unlock(&cache->lock);
 		pblk_trans_evict_run(pblk);
-		spin_lock(&cache->lock);
 		goto retry_get_bit;
 	}
 

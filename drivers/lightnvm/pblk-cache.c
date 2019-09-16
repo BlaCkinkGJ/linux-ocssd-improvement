@@ -61,16 +61,18 @@ retry:
 		
 		if (dir->enable && (kfifo_avail(&dir->fifo) > copy_size)) {
 			struct pblk_update_item item;
-			unsigned int ret = 0;
 
 			item.type = bio->content_type;
 			item.lba = w_ctx.lba;
 
+			pblk_trans_do_calc(pblk, item);
+#ifdef PBLK_CALC_THREAD_ENABLE
 			ret = kfifo_in(&dir->fifo, &item, sizeof(struct pblk_update_item));
 			if (ret < sizeof(struct pblk_update_item)) {
 				pr_warn("something wrong to add item");
 			}
 			pblk_trans_update_kick(pblk);
+#endif
 		}
 
 		pos = pblk_rb_wrap_pos(&pblk->rwb, bpos + i);

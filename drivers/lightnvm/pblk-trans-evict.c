@@ -15,6 +15,26 @@
 
 #include "pblk.h"
 
+static int pblk_trans_hot_ratio_calc(struct pblk_trans_entry *entry)
+{
+	int hot_ratio;
+
+	hot_ratio = atomic_read(&entry->hot_ratio);
+
+	if ( time_before(entry->time_stamp, jiffies) ) {
+		unsigned int before = jiffies_to_msecs(entry->time_stamp);
+		unsigned int after = jiffies_to_msecs(jiffies);
+		int accel = after - before;
+
+		hot_ratio -= int_sqrt((accel >> 2) * accel);
+	} else {
+		hot_ratio--;
+	}
+	hot_ratio = hot_ratio > 0 ? hot_ratio : 0;
+
+	return hot_ratio;
+}
+
 static int __pblk_trans_evict_run(struct pblk *pblk)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
@@ -23,13 +43,13 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 	unsigned char *cache_ptr = NULL;
 
 	int victim_bit = -1;
-	int coldest = INT_MAX, i;
+	int coldest = INT_MAX, i, bit_idx;
 
 	for (i = 0; i < dir->entry_num; i++) {
 		struct pblk_trans_entry *entry = &dir->entry[i];
-		int hot_ratio, bit_idx;
-
-		hot_ratio = atomic_read(&entry->hot_ratio);
+		int hot_ratio;
+		
+		hot_ratio = pblk_trans_hot_ratio_calc(entry);
 		bit_idx = atomic_read(&entry->bit_idx);
 		cache_ptr = entry->cache_ptr;
 
@@ -37,6 +57,7 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 			victim_entry = entry;
 			coldest = hot_ratio;
 		}
+		atomic_set(&entry->hot_ratio, hot_ratio);
 	}
 
 	if (victim_entry == NULL) {
@@ -89,9 +110,11 @@ void pblk_trans_evict_run(struct pblk *pblk)
 
 	static int bench = -1;
 
+#ifdef PBLK_EVICT_THREAD_ENABLE
 	if (!spin_trylock(&cache->lock)) {
 		return ;
 	}
+#endif
 
 	if(bench == -1)
 		bench = pblk_trans_bench_calculate(pblk);
@@ -105,8 +128,11 @@ void pblk_trans_evict_run(struct pblk *pblk)
 			break;
 		}
 		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+		io_schedule();
 	}
+#ifdef PBLK_EVICT_THREAD_ENABLE
 	spin_unlock(&cache->lock);
+#endif
 }
 
 #ifdef PBLK_EVICT_THREAD_ENABLE

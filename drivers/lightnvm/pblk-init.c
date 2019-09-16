@@ -101,7 +101,12 @@ static u32 pblk_l2p_crc(struct pblk *pblk)
 static void pblk_l2p_free(struct pblk *pblk)
 {
 #ifndef PBLK_DISABLE_DFTL
+#ifdef PBLK_CALC_THREAD_ENABLE
 	pblk_trans_calc_exit(pblk);
+#endif
+#ifdef PBLK_EVICT_THREAD_ENABLE
+	pblk_trans_evict_exit(pblk);
+#endif
 	pblk_trans_free(pblk);
 #endif
 #ifdef PBLK_DISABLE_DFTL
@@ -1311,7 +1316,9 @@ fail_free_trans:
 #ifdef PBLK_EVICT_THREAD_ENABLE
 	pblk_trans_evict_exit(pblk);
 #endif
+#ifdef PBLK_CALC_THREAD_ENABLE
 	pblk_trans_calc_exit(pblk);
+#endif
 #endif
 fail_stop_writer:
 	pblk_writer_stop(pblk);
