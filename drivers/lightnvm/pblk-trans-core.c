@@ -70,7 +70,17 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	sector_t row_size = PBLK_TRANS_CHUNK_SIZE;
 	sector_t entry_size = pblk_trans_entry_size_get(pblk);
 
-	do_div(row_size, entry_size);
+	if(entry_size == 4) 
+		row_size = row_size >> 2;
+	else
+		row_size = row_size >> 3;
+
+	dir->shift_size = -1;
+
+	while (row_size > 0) { 
+		dir->shift_size++;
+		row_size = row_size >> 1;
+	} 
 
 	/**
 	 * Save the trans map to device.
@@ -81,17 +91,17 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		struct pblk_trans_entry *now = &dir->entry[index];
 		void *ptr;
 		now->id = index;
-		atomic_set(&now->hot_ratio, 0);
 		now->line = line;
 		now->paddr = ADDR_EMPTY;
 		atomic_set(&now->bit_idx, 0);
+		atomic_set(&now->hot_ratio, 0);
 		atomic64_set(&now->hit_ratio, 0);
 		ptr = &pblk->trans_map[index*PBLK_TRANS_CHUNK_SIZE];
 		pblk_trans_mem_copy(pblk, cache->bucket, ptr, PBLK_TRANS_CHUNK_SIZE);
 		pr_info("write position: %p to %p", ptr, cache->bucket);
 
-		now->row_size = row_size;
 		now->map_bitmap = kzalloc(lm->sec_bitmap_len, GFP_ATOMIC);
+		now->is_change = 1;
 
 		if (!now->map_bitmap) {
 			pr_err("pblk-trans: ocssd bitmap setting failed\n");
@@ -206,7 +216,7 @@ static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
 	int bit_idx;
 	sector_t base = lba;
 
-	do_div(base, dir->entry[0].row_size);
+	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
 	entry->time_stamp = jiffies;
@@ -224,11 +234,13 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 	struct pblk_trans_dir *dir = &pblk->dir;
 
 	sector_t base = lba;
-	sector_t offset; 
+	sector_t offset = base; 
 	struct ppa_addr ppa;
 	void *ptr;
 
-	offset = do_div(base, dir->entry[0].row_size);
+	base = base >> dir->shift_size;
+	offset -= base * (1 << dir->shift_size); 
+
 	pblk_ppa_set_empty(&ppa);
 
 	ptr = dir->entry[base].cache_ptr;
@@ -261,7 +273,7 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	sector_t base = lba;
 	int bit = -1;
 
-	do_div(base, dir->entry[0].row_size);
+	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
 retry_get_bit:
@@ -282,6 +294,7 @@ retry_get_bit:
 	cache_chk = &cache->trans_map[bit*PBLK_TRANS_CHUNK_SIZE];
 	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, PBLK_TRANS_CHUNK_SIZE);
 	entry->cache_ptr = cache_chk;
+	entry->is_change = 0;
 	atomic_set(&entry->bit_idx, bit);
 	atomic_add(PBLK_ACCEL_DEC_POINT, &entry->hot_ratio);
 	set_bit(bit, cache->free_bitmap);
@@ -297,7 +310,7 @@ struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 
 	sector_t base = lba;
 
-	do_div(base, dir->entry[0].row_size);
+	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
 	spin_lock(&cache->lock);
@@ -322,10 +335,11 @@ static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
 	struct pblk_trans_dir *dir = &pblk->dir;
 
 	sector_t base = lba;
-	sector_t offset; 
+	sector_t offset = base; 
 	void *ptr;
 
-	offset = do_div(base, dir->entry[0].row_size);
+	base = base >> dir->shift_size;
+	offset -= base * (1 << dir->shift_size); 
 
 	ptr = dir->entry[base].cache_ptr;
 
@@ -356,7 +370,7 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 	sector_t base = lba;
 	int ret;
 
-	do_div(base, dir->entry[0].row_size);
+	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
 	spin_lock(&cache->lock);
@@ -369,6 +383,7 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 	}
 
 	ret = pblk_trans_ppa_set(pblk, lba, ppa);
+	entry->is_change = 1;
 	spin_unlock(&cache->lock);
 	return ret;
 }

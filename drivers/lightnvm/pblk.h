@@ -64,7 +64,7 @@
 #define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
 
 #define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (16) /* Cache size */
+#define PBLK_TRANS_CACHE_SIZE (8) /* Cache size */
 
 #define PBLK_ACCEL_DEC_POINT 1000
 
@@ -614,8 +614,6 @@ struct pblk_trans_cache {
 	size_t size;                     /* number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	size_t bucket_sec;               /* cache bucket sectors */
 
-	int usage;                       /* current cache block usage */
-
 	unsigned char *bucket;           /* it is a kind of write buffer */
 	unsigned char *trans_map;        /* compatible type of the mapping table 
 							            (u64 or u32 casting is necessary!) */
@@ -632,11 +630,12 @@ struct pblk_trans_entry {
 	unsigned char *cache_ptr;   /* start location of cache */
 
 	unsigned long *map_bitmap;	/* Bitmap for mapped sectors in line */
-	size_t row_size;            /* The number of the lba. 
-								   NOT REAL MEMORY ALLOCATION SIZE */
+
 	atomic_t bit_idx;
 	atomic_t hot_ratio;
 	atomic64_t hit_ratio;
+
+	int is_change;
 
 	unsigned long time_stamp;
 };
@@ -651,9 +650,13 @@ struct pblk_trans_dir {
 	size_t entry_num;               /* number of entry in this directory */
 	int enable;						/* initial recovery successful then this is true */
 
+	int shift_size;
+
+#ifdef PBLK_CALC_THREAD_ENABLE
 	struct kfifo fifo;              /* manage to incoming data line write request */
 
 	struct task_struct *update_ts;  /* update task struct */
+#endif
 
 	struct pblk_trans_entry *entry; /* this contains entries */
 	struct pblk_trans_op *op;       /* directory operation is mapped in this place */

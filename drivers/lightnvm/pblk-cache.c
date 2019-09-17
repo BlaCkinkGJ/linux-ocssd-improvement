@@ -55,11 +55,10 @@ retry:
 
 	for (i = 0; i < nr_entries; i++) {
 		void *data = bio_data(bio);
-		const size_t copy_size = sizeof(struct pblk_update_item);
 	
 		w_ctx.lba = lba + i;
 		
-		if (dir->enable && (kfifo_avail(&dir->fifo) > copy_size)) {
+		if (dir->enable) {
 			struct pblk_update_item item;
 
 			item.type = bio->content_type;
@@ -67,9 +66,11 @@ retry:
 
 			pblk_trans_do_calc(pblk, item);
 #ifdef PBLK_CALC_THREAD_ENABLE
-			ret = kfifo_in(&dir->fifo, &item, sizeof(struct pblk_update_item));
-			if (ret < sizeof(struct pblk_update_item)) {
-				pr_warn("something wrong to add item");
+			if (kfifo_avail(&dir->fifo) > copy_size) {
+				ret = kfifo_in(&dir->fifo, &item, sizeof(struct pblk_update_item));
+				if (ret < sizeof(struct pblk_update_item)) {
+					pr_warn("something wrong to add item");
+				}
 			}
 			pblk_trans_update_kick(pblk);
 #endif

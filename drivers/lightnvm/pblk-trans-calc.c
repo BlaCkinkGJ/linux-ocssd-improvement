@@ -23,15 +23,15 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 	if (!dir->enable)
 		return;
 
-	do_div(item.lba, dir->entry[0].row_size);
+	item.lba = item.lba >> dir->shift_size;
 	entry = &dir->entry[item.lba];
 
 	switch(item.type) {
 		case PBLK_ITEM_TYPE_DATA:
-			atomic_add(20, &entry->hot_ratio);
+			atomic_add(5, &entry->hot_ratio);
 			break;
 		case PBLK_ITEM_TYPE_JOURNAL:
-			atomic_add(5, &entry->hot_ratio);
+			atomic_add(20, &entry->hot_ratio); 
 			break;
 		default:
 			atomic_inc(&entry->hot_ratio);
@@ -61,7 +61,7 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 		struct pblk_trans_entry *entry;
 
 		int type;
-		unsigned int ret, hot_ratio;
+		unsigned int ret, bit_idx;
 
 		const size_t copy_size = sizeof(struct pblk_update_item);
 		sector_t base;
@@ -78,9 +78,9 @@ static void pblk_trans_hot_ratio_update(struct pblk *pblk)
 		do_div(base, dir->entry[0].row_size);
 
 		entry = &dir->entry[base];
-		hot_ratio = atomic_read(&entry->bit_idx);
+		bit_idx = atomic_read(&entry->bit_idx);
 
-		if (hot_ratio == -1)
+		if (bit_dix == -1)
 			continue;
 
 		switch(type) {

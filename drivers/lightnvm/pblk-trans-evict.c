@@ -25,8 +25,12 @@ static int pblk_trans_hot_ratio_calc(struct pblk_trans_entry *entry)
 		unsigned int before = jiffies_to_msecs(entry->time_stamp);
 		unsigned int after = jiffies_to_msecs(jiffies);
 		int accel = after - before;
+		
+		if (accel < 0)
+			accel = ~accel + 1;
+		accel = accel >> 1;
 
-		hot_ratio -= int_sqrt((accel >> 2) * accel);
+		hot_ratio = hot_ratio - accel;
 	} else {
 		hot_ratio--;
 	}
@@ -72,7 +76,7 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 
 	victim_entry->cache_ptr = cache->bucket;
 	victim_bit = atomic_read(&victim_entry->bit_idx);
-	if(dir->op->write(pblk, victim_entry)) {
+	if(victim_entry->is_change && dir->op->write(pblk, victim_entry)) {
 		pr_err("pblk-trans: ocssd write failed\n");
 		return -EFAULT;
 	}
