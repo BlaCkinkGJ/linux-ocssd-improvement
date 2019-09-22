@@ -59,12 +59,20 @@
 #define PBLK_DEFAULT_OP (11)
 
 /* D-FTL setting */
-#define DEFAULT_CHUNK_SIZE \
+#define DEVICE_MULTIPLY_VALUE (pblk->min_write_pgs * pblk->dev->geo.csecs) /* 8 x 4KB */
+#define DEFAULT_BLOCK_SIZE \
 	(pblk->dev->geo.clba * pblk->dev->geo.csecs)
-#define USER_DEFINED_CHUNK_SIZE	(pblk->dev->geo.csecs)
+#define USER_DEFINED_BLOCK_SIZE \
+	(2 * DEVICE_MULTIPLY_VALUE) /* 64KB */ 
+/**
+ * 4000 => 256MB
+ * 3000 => 192MB
+ * 2000 => 128MB
+ */
+#define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
+#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
 
-#define PBLK_TRANS_CHUNK_SIZE (DEFAULT_CHUNK_SIZE)
-#define PBLK_TRANS_CACHE_SIZE (8) /* Cache size */
+#define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
 #define PBLK_ACCEL_DEC_POINT 1000
 
@@ -633,9 +641,11 @@ struct pblk_trans_entry {
 
 	atomic_t bit_idx;
 	atomic_t hot_ratio;
-	atomic64_t hit_ratio;
 
-	int is_change;
+	atomic64_t hit_ratio;
+	atomic64_t total;
+
+	bool is_change;
 
 	unsigned long time_stamp;
 };
@@ -1008,9 +1018,8 @@ struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
 void pblk_trans_free(struct pblk *pblk);
 size_t pblk_trans_map_size(struct pblk *pblk);
-void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src, 
-		size_t size);
 void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset);
+void pblk_dir_sysfs_force(struct pblk *pblk, int force);
 
 /*
  * pblk trans io
@@ -1033,7 +1042,8 @@ void pblk_trans_calc_exit(struct pblk *pblk);
 /*
  * pblk trans evict
  */
-void pblk_trans_evict_run(struct pblk *pblk);
+int pblk_trans_bench_calculate(struct pblk *pblk);
+void pblk_trans_evict_run(struct pblk *pblk, int bench);
 #ifdef PBLK_EVICT_THREAD_ENABLE
 int pblk_trans_evict_init(struct pblk *pblk);
 void pblk_trans_evict_exit(struct pblk *pblk);

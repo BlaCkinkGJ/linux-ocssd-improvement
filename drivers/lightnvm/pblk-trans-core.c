@@ -44,17 +44,29 @@ void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset)
 	return ret;
 }
 
-static int pblk_trans_entry_size_get(struct pblk *pblk)
+static int pblk_trans_entry_shift_size(struct pblk *pblk)
 {
-	sector_t entry_size = 0;
+	sector_t exponent= 0;
 
 	if (pblk->addrf_len < 32) {
-		entry_size = 4;
+		exponent = 2;
 	} else {
-		entry_size = 8;
+		exponent = 3;
 	}
 	
-	return entry_size;
+	return exponent;
+}
+
+static int pblk_trans_shift_size_get(sector_t size)
+{
+	int ret = -1;
+
+	while (size > 0) {
+		ret++;
+		size = size >> 1;
+	}
+
+	return ret;
 }
 
 static int pblk_trans_recov_from_mem(struct pblk *pblk)
@@ -66,27 +78,28 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	struct pblk_line_meta *lm = &pblk->lm;
 
 	int index = 0;
+	int entry_shift_size = pblk_trans_entry_shift_size(pblk);
 
-	sector_t row_size = PBLK_TRANS_CHUNK_SIZE;
-	sector_t entry_size = pblk_trans_entry_size_get(pblk);
+	sector_t row_size = PBLK_TRANS_BLOCK_SIZE;
+	bool is_valid;
 
-	if(entry_size == 4) 
-		row_size = row_size >> 2;
-	else
-		row_size = row_size >> 3;
+	row_size = row_size >> entry_shift_size;
 
-	dir->shift_size = -1;
+	dir->shift_size = pblk_trans_shift_size_get(row_size);
 
-	while (row_size > 0) { 
-		dir->shift_size++;
-		row_size = row_size >> 1;
-	} 
+	/* check the valid shift status */
+	row_size = row_size >> dir->shift_size;
+	row_size = ((row_size << dir->shift_size) << entry_shift_size);
+	is_valid = row_size == PBLK_TRANS_BLOCK_SIZE;
+	if (dir->shift_size == -1 || !is_valid) {
+		pr_err("pblk-trans: invalid shift size");
+		return -EINVAL;
+	}
 
 	/**
 	 * Save the trans map to device.
 	 * TODO: if snapshot exists then this will be skipped.
 	 */
-
 	for(index = 0; index < dir->entry_num; index++) {
 		struct pblk_trans_entry *now = &dir->entry[index];
 		void *ptr;
@@ -96,12 +109,13 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 		atomic_set(&now->bit_idx, 0);
 		atomic_set(&now->hot_ratio, 0);
 		atomic64_set(&now->hit_ratio, 0);
-		ptr = &pblk->trans_map[index*PBLK_TRANS_CHUNK_SIZE];
-		pblk_trans_mem_copy(pblk, cache->bucket, ptr, PBLK_TRANS_CHUNK_SIZE);
-		pr_info("write position: %p to %p", ptr, cache->bucket);
+		atomic64_set(&now->total, 0);
+		ptr = &pblk->trans_map[index*PBLK_TRANS_BLOCK_SIZE];
+		mb();
+		memcpy(cache->bucket, ptr, PBLK_TRANS_BLOCK_SIZE);
 
 		now->map_bitmap = kzalloc(lm->sec_bitmap_len, GFP_ATOMIC);
-		now->is_change = 1;
+		now->is_change = true;
 
 		if (!now->map_bitmap) {
 			pr_err("pblk-trans: ocssd bitmap setting failed\n");
@@ -123,23 +137,27 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	return 0;
 }
 
-void pblk_trans_mem_copy(struct pblk* pblk, unsigned char *dst, unsigned char *src,
-		size_t size)
+static bool pblk_trans_check_sector(struct pblk *pblk, size_t sector)
 {
-	//size_t entry_size = pblk_trans_entry_size_get(pblk);
-	//memcpy(dst, src, size * entry_size);
-	memcpy(dst, src, size);
+	long long ret = sector;
+	const int min = pblk->min_write_pgs;
+	while (ret > 0) {
+		ret -= min;
+	}
+	if (ret < 0)
+		pr_warn("sector is not aligned %ld ==> %lld/%d", sector, ret, min);
+	return ret == 0;
 }
+
 
 int pblk_trans_init(struct pblk *pblk)
 {
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
 	struct pblk_gc *gc = &pblk->gc;
 
 	unsigned int dir_entry_size = sizeof(struct pblk_trans_entry);
+	bool is_valid;
 	int ret;
 
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
@@ -151,16 +169,18 @@ int pblk_trans_init(struct pblk *pblk)
 	pr_info("pblk-trans: directory initialization phase: OK\n");
 
 	/* cache initialization */
-	cache->size = PBLK_TRANS_CHUNK_SIZE * PBLK_TRANS_CACHE_SIZE;
+	cache->size = PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE;
 	cache->trans_map = vmalloc(cache->size); 
 	if (!cache->trans_map) {
 		cache->size = 0;
 		return -ENOMEM;
 	}
 
-	cache->bucket = vmalloc(PBLK_TRANS_CHUNK_SIZE);
-	cache->bucket_sec = geo->clba;
-	if (!cache->bucket) {
+	cache->bucket = vmalloc(PBLK_TRANS_BLOCK_SIZE);
+	cache->bucket_sec = PBLK_TRANS_BLOCK_SIZE >> PBLK_TRANS_SHIFT_SIZE;
+	is_valid = (cache->bucket_sec << PBLK_TRANS_SHIFT_SIZE) == PBLK_TRANS_BLOCK_SIZE;
+	is_valid = is_valid && pblk_trans_check_sector(pblk, cache->bucket_sec);
+	if (!cache->bucket || !is_valid) {
 		pr_err("pblk-trans: cache bucket memory allocation fail\n");
 		return -ENOMEM;
 	}
@@ -222,6 +242,7 @@ static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
 	entry->time_stamp = jiffies;
 	bit_idx = atomic_read(&entry->bit_idx);
 
+	atomic64_inc(&entry->total);
 	if(bit_idx != -1)
 		atomic64_inc(&entry->hit_ratio);
 
@@ -281,7 +302,8 @@ retry_get_bit:
 			PBLK_TRANS_CACHE_SIZE);
 
 	if (bit >= PBLK_TRANS_CACHE_SIZE) {
-		pblk_trans_evict_run(pblk);
+		int bench = pblk_trans_bench_calculate(pblk);
+		pblk_trans_evict_run(pblk, bench);
 		goto retry_get_bit;
 	}
 
@@ -291,10 +313,11 @@ retry_get_bit:
 		return -EINVAL;
 	}
 
-	cache_chk = &cache->trans_map[bit*PBLK_TRANS_CHUNK_SIZE];
-	pblk_trans_mem_copy(pblk, cache_chk, cache->bucket, PBLK_TRANS_CHUNK_SIZE);
+	cache_chk = &cache->trans_map[bit*PBLK_TRANS_BLOCK_SIZE];
+	mb();
+	memcpy(cache_chk, cache->bucket, PBLK_TRANS_BLOCK_SIZE);
 	entry->cache_ptr = cache_chk;
-	entry->is_change = 0;
+	entry->is_change = false;
 	atomic_set(&entry->bit_idx, bit);
 	atomic_add(PBLK_ACCEL_DEC_POINT, &entry->hot_ratio);
 	set_bit(bit, cache->free_bitmap);
@@ -383,9 +406,32 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 	}
 
 	ret = pblk_trans_ppa_set(pblk, lba, ppa);
-	entry->is_change = 1;
+	entry->is_change = true;
 	spin_unlock(&cache->lock);
 	return ret;
+}
+
+void pblk_dir_sysfs_force(struct pblk *pblk, int force)
+{
+	struct pblk_trans_dir *dir = &pblk->dir;
+
+	int bench, i;
+
+	if (force == 0)
+		return ;
+	spin_lock(&pblk->trans_lock);
+	bench = 0; 
+	pblk_trans_evict_run(pblk, bench);
+	for(i = 0; i < dir->entry_num; i++) {
+		struct pblk_trans_entry *entry = &dir->entry[i];
+
+		atomic_set(&entry->hot_ratio, 0);
+
+		atomic64_set(&entry->hit_ratio, 0);
+		atomic64_set(&entry->total, 0);
+	}
+	pr_info("pblk-trans: directory forced clear\n");
+	spin_unlock(&pblk->trans_lock);
 }
 
 void pblk_trans_free(struct pblk *pblk)

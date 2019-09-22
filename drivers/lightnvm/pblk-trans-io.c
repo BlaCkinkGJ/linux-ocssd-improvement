@@ -59,7 +59,6 @@ static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry 
 	ppa_list = meta_list + pblk_dma_ppa_size;
 	dma_ppa_list = dma_meta_list + pblk_dma_ppa_size;
 
-	/* geo->clba means number of sectors in a chunk */
 	left_ppas = cache->bucket_sec;
 
 next_trans_rq:
@@ -224,7 +223,7 @@ static void __ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u6
 	WARN_ON(line->state == PBLK_LINESTATE_FREE);
 
 	if (test_and_set_bit(paddr, line->invalid_bitmap)) {
-		WARN_ONCE(1, "pblk trans: double invalidate\n");
+		WARN_ONCE(1, "pblk-trans: double invalidate\n");
 		spin_unlock(&line->lock);
 		return ;
 	}
@@ -238,19 +237,17 @@ static void __ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u6
  */
 static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entry, u64 paddr)
 {
-	struct nvm_tgt_dev *dev = pblk->dev;
-	struct nvm_geo *geo = &dev->geo;
 	struct pblk_line_meta *lm = &pblk->lm;
 	struct pblk_line *line = entry->line;
 	struct pblk_gc *gc = &pblk->gc;
+	struct pblk_trans_cache *cache = &pblk->cache;
 
 	int weight, bench;
 	int i;
 
-	for(i = 0; i < geo->clba; i++) {
+	for(i = 0; i < cache->bucket_sec; i++) {
 		WARN_ON(!test_and_clear_bit(paddr, entry->map_bitmap));
-		paddr = find_next_bit(entry->map_bitmap,
-							pblk->lm.sec_per_line, paddr + 1);
+		paddr = find_next_bit(entry->map_bitmap, lm->sec_per_line, paddr + 1);
 		__ocssd_l2p_invalidate(pblk, line, paddr);
 	}
 
@@ -259,12 +256,11 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 		return -EFAULT;
 	}
 
-	bench = lm->sec_per_line - geo->clba - 1;
+	bench = lm->sec_per_line - cache->bucket_sec - 1;
 	weight = bitmap_weight(line->invalid_bitmap, lm->sec_per_line);
 
 	if (weight > bench) {
 		ocssd_l2p_add_to_gc(pblk, line);
-		// gc->gc_trans_run = 1; /* forced run */
 		gc->gc_enabled = 1;
 		pblk_gc_should_start(pblk);
 	}
@@ -323,7 +319,8 @@ int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 	void *map_ptr = pblk_trans_ptr_get(pblk, pblk->trans_map, offset);
 	/* Read I/O processed in this location */
 
-	pblk_trans_mem_copy(pblk, cache->bucket, map_ptr, entry->chk_size);
+	mb();
+	memcpy(cache->bucket, map_ptr, entry->chk_size);
 
 	return 0;
 }
@@ -357,7 +354,8 @@ int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	offset = entry->paddr*entry->chk_size;
 	map_ptr = pblk_trans_ptr_get(pblk, pblk->trans_map, offset);
 
-	pblk_trans_mem_copy(pblk, map_ptr, entry->cache_ptr, entry->chk_size);
+	mb();
+	memcpy(map_ptr, entry->cache_ptr, entry->chk_size);
 	/* Submit I/O processed in this location */
 
 

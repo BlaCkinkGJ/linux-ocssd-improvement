@@ -71,8 +71,8 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 
 	cache_ptr = victim_entry->cache_ptr;
 
-	pblk_trans_mem_copy(pblk, cache->bucket, victim_entry->cache_ptr,
-			PBLK_TRANS_CHUNK_SIZE);
+	mb();
+	memcpy(cache->bucket, victim_entry->cache_ptr, PBLK_TRANS_BLOCK_SIZE);
 
 	victim_entry->cache_ptr = cache->bucket;
 	victim_bit = atomic_read(&victim_entry->bit_idx);
@@ -88,13 +88,13 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 	return 0;
 }
 
-static int pblk_trans_bench_calculate(struct pblk *pblk)
+int pblk_trans_bench_calculate(struct pblk *pblk)
 {
 	int bench;
 
 	if (PBLK_TRANS_CACHE_SIZE > 5) {
 		bench = PBLK_TRANS_CACHE_SIZE;
-		do_div(bench, 3); /* 33.33% contents evict */
+		bench = bench >> 3; /* 12.5% contents evict */
 		bench = PBLK_TRANS_CACHE_SIZE - bench;
 	} else if (PBLK_TRANS_CACHE_SIZE > 3) {
 		bench = 2;
@@ -105,14 +105,12 @@ static int pblk_trans_bench_calculate(struct pblk *pblk)
 	return bench;
 }
 
-void pblk_trans_evict_run(struct pblk *pblk)
+void pblk_trans_evict_run(struct pblk *pblk, int bench)
 {
 	struct pblk_trans_cache *cache = &pblk->cache;
 
 	int ret;
 	int weight;
-
-	static int bench = -1;
 
 #ifdef PBLK_EVICT_THREAD_ENABLE
 	if (!spin_trylock(&cache->lock)) {
@@ -120,15 +118,12 @@ void pblk_trans_evict_run(struct pblk *pblk)
 	}
 #endif
 
-	if(bench == -1)
-		bench = pblk_trans_bench_calculate(pblk);
-
 	weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 
 	while (weight > bench) {
 		ret =  __pblk_trans_evict_run(pblk);
 		if (ret) {
-			pr_warn("pblk trans: evict sequence something wrong\n");
+			pr_warn("pblk-trans: evict sequence something wrong\n");
 			break;
 		}
 		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);

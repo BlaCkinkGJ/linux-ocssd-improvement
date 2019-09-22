@@ -163,15 +163,13 @@ static int pblk_l2p_init(struct pblk *pblk, bool factory_init)
 		entry_size = 4;
 #endif
 
-
-
 	map_size = pblk_trans_map_size(pblk);
 
 #ifndef PBLK_DISABLE_D_FTL
 	i = 0;
-	while(map_size > PBLK_TRANS_CHUNK_SIZE * i)
+	while(map_size > PBLK_TRANS_BLOCK_SIZE * i)
 		i++;
-	map_size = PBLK_TRANS_CHUNK_SIZE * i;
+	map_size = PBLK_TRANS_BLOCK_SIZE * i;
 	dir->entry_num = i;
 #endif
 

@@ -315,20 +315,39 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			atomic_read(&pblk->inflight_io));
 	{
 		struct pblk_trans_dir *dir = &pblk->dir;
+		struct pblk_trans_cache *cache = &pblk->cache;
+		long long total_hit = 0;
+		long long total = 0;
+		int percent, weight;
 		int i;
 
-		sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"id\tline\tpaddr\thot                hit                     bit\tcache\n");
 		for(i = 0; i < dir->entry_num; i++) {
 			struct pblk_trans_entry *entry = &dir->entry[i];
-			int hot = atomic_read(&entry->hot_ratio);
-			u64 hit = atomic64_read(&entry->hit_ratio);
-			int bit_idx = atomic_read(&entry->bit_idx);
-			sz += snprintf(page + sz, PAGE_SIZE - sz,
-					"%d\t%d\t%lld\t%-20d%-20llu%d%p\n",
-					i, entry->line->id, entry->paddr, hot, hit, bit_idx, entry->cache_ptr);
-
+			total_hit += atomic64_read(&entry->hit_ratio);
+			total += atomic64_read(&entry->total);
 		}
+
+		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+		sz += snprintf(page+sz, PAGE_SIZE - sz, 
+				"l2p table size\t: %15ld\n", dir->entry_num * PBLK_TRANS_BLOCK_SIZE);
+
+		sz += snprintf(page+sz, PAGE_SIZE - sz, 
+				"directory size\t: %15ld\n"
+				, (dir->entry_num * sizeof(struct pblk_trans_entry)));
+
+		sz += snprintf(page+sz, PAGE_SIZE - sz, 
+				"cache size\t: %15ld\n", (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE);
+
+		sz += snprintf(page+sz, PAGE_SIZE - sz, 
+				"bucket size\t: %15ld\n", (size_t)PBLK_TRANS_BLOCK_SIZE);
+
+		percent = (total_hit*100)/total;
+		sz += snprintf(page+sz, PAGE_SIZE - sz, 
+				"[cache] hit/total = %lld/%lld(%d%%)\n",total_hit, total, percent);
+		total = PBLK_TRANS_CACHE_SIZE;
+		percent = (weight*100)/total;
+		sz += snprintf(page+sz, PAGE_SIZE - sz, 
+				"[cache] use/total = %d/%lld(%d%%)\n", weight, total, percent);
 	}
 	return sz;
 }
@@ -476,6 +495,24 @@ static ssize_t pblk_sysfs_stats_debug(struct pblk *pblk, char *page)
 }
 #endif
 
+static ssize_t pblk_sysfs_flush_force(struct pblk *pblk, const char *page,
+				   size_t len)
+{
+	size_t c_len;
+	int force;
+
+	c_len = strcspn(page, "\n");
+	if (c_len >= len)
+		return -EINVAL;
+
+	if (kstrtouint(page, 0, &force))
+		return -EINVAL;
+
+	pblk_dir_sysfs_force(pblk, force);
+
+	return len;
+}
+
 static ssize_t pblk_sysfs_gc_force(struct pblk *pblk, const char *page,
 				   size_t len)
 {
@@ -607,6 +644,11 @@ static struct attribute sys_lines_info_attr = {
 	.mode = 0444,
 };
 
+static struct attribute sys_flush_force = {
+	.name = "flush_force",
+	.mode = 0200,
+};
+
 static struct attribute sys_gc_force = {
 	.name = "gc_force",
 	.mode = 0200,
@@ -644,6 +686,7 @@ static struct attribute *pblk_attrs[] = {
 	&sys_rate_limiter_attr,
 	&sys_errors_attr,
 	&sys_gc_state,
+	&sys_flush_force,
 	&sys_gc_force,
 	&sys_max_sec_per_write,
 	&sys_rb_attr,
@@ -702,6 +745,8 @@ static ssize_t pblk_sysfs_store(struct kobject *kobj, struct attribute *attr,
 
 	if (strcmp(attr->name, "gc_force") == 0)
 		return pblk_sysfs_gc_force(pblk, buf, len);
+	else if (strcmp(attr->name, "flush_force") == 0)
+		return pblk_sysfs_flush_force(pblk, buf, len);
 	else if (strcmp(attr->name, "max_sec_per_write") == 0)
 		return pblk_sysfs_set_sec_per_write(pblk, buf, len);
 	else if (strcmp(attr->name, "write_amp_trip") == 0)
