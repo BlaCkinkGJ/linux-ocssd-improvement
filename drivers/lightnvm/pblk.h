@@ -65,12 +65,23 @@
 #define USER_DEFINED_BLOCK_SIZE \
 	(2 * DEVICE_MULTIPLY_VALUE) /* 64KB */ 
 /**
+ * [FIO SETTING]
+ *
+ * 8000 => 512MB
+ * 6000 => 384MB
  * 4000 => 256MB
- * 3000 => 192MB
  * 2000 => 128MB
  */
+
+/**
+ * [Filebench SETTING]
+ * webserver        => over          150
+ * fileserver, oltp => approximately 100
+ * varmail          => approximately 50
+ */
+
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
-#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_CACHE_SIZE (1000) /* count per BLOCK_SIZE */
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 

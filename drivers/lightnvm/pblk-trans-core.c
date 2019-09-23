@@ -336,7 +336,10 @@ struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
-	spin_lock(&cache->lock);
+	while(!spin_trylock(&cache->lock)) {
+		io_schedule();
+	}
+
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache hit */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			struct ppa_addr err;
@@ -396,7 +399,9 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
-	spin_lock(&cache->lock);
+	while(!spin_trylock(&cache->lock)) {
+		io_schedule();
+	}
 	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache miss */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			pr_err("pblk-trans: map_set ==> update cache failed\n");
@@ -414,12 +419,15 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 void pblk_dir_sysfs_force(struct pblk *pblk, int force)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_cache *cache = &pblk->cache;
 
 	int bench, i;
 
 	if (force == 0)
 		return ;
-	spin_lock(&pblk->trans_lock);
+	while(!spin_trylock(&cache->lock)) {
+		io_schedule();
+	}
 	bench = 0; 
 	pblk_trans_evict_run(pblk, bench);
 	for(i = 0; i < dir->entry_num; i++) {
@@ -431,7 +439,7 @@ void pblk_dir_sysfs_force(struct pblk *pblk, int force)
 		atomic64_set(&entry->total, 0);
 	}
 	pr_info("pblk-trans: directory forced clear\n");
-	spin_unlock(&pblk->trans_lock);
+	spin_unlock(&cache->lock);
 }
 
 void pblk_trans_free(struct pblk *pblk)
