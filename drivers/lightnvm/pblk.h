@@ -81,7 +81,7 @@
  */
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
-#define PBLK_TRANS_CACHE_SIZE (1000) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
@@ -629,6 +629,11 @@ struct pblk_update_item {
 	sector_t lba;
 };
 
+enum {
+	PBLK_L2P_READ = 0,
+	PBLK_L2P_WRITE = 1,
+};
+
 struct pblk_trans_cache {
 	size_t size;                     /* number of the lba. NOT REAL MEMORY ALLOCATION SIZE */
 	size_t bucket_sec;               /* cache bucket sectors */
@@ -639,6 +644,12 @@ struct pblk_trans_cache {
 	unsigned long *free_bitmap;      /* this contains location of free blocks in cache */
 
 	spinlock_t lock;
+};
+
+struct pblk_trans_ratio {
+	atomic64_t total;
+	atomic64_t write;
+	atomic64_t read;
 };
 
 struct pblk_trans_entry {
@@ -653,8 +664,8 @@ struct pblk_trans_entry {
 	atomic_t bit_idx;
 	atomic_t hot_ratio;
 
-	atomic64_t hit_ratio;
-	atomic64_t total;
+	struct pblk_trans_ratio hit;
+	struct pblk_trans_ratio call;
 
 	bool is_change;
 
@@ -720,6 +731,9 @@ struct pblk {
 	int sec_per_write;
 
 	unsigned char instance_uuid[16];
+
+	u64 total_time;
+	u64 num_of_stamp;
 
 	/* Persistent write amplification counters, 4kb sector I/Os */
 	atomic64_t user_wa;		/* Sectors written by user */
@@ -1025,6 +1039,7 @@ int pblk_rl_is_limit(struct pblk_rl *rl);
  * pblk trans core
  */
 int pblk_trans_init(struct pblk *pblk);
+int pblk_trans_ratio_inc(struct pblk_trans_ratio *ratio, int type);
 struct ppa_addr pblk_trans_l2p_map_get (struct pblk *pblk, sector_t lba);
 int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba, struct ppa_addr ppa);
 void pblk_trans_free(struct pblk *pblk);
@@ -1043,6 +1058,7 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry);
 /*
  * pblk trans calc
  */
+void pblk_trans_hit_calc(struct pblk_trans_entry *entry, int type);
 void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item);
 #ifdef PBLK_CALC_THREAD_ENABLE
 void pblk_trans_update_kick(struct pblk *pblk);
@@ -1290,10 +1306,16 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 								sector_t lba)
 {
 	struct ppa_addr ppa;
+	struct timespec ts_start, ts_end, ts_run;
 
+	getnstimeofday(&ts_start);
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		struct ppa_addr ppa = pblk_trans_l2p_map_get(pblk, lba);
+		getnstimeofday(&ts_end);
+		ts_run = timespec_sub(ts_end, ts_start);
+		pblk->total_time += ts_run.tv_nsec;
+		pblk->num_of_stamp++;
 		return ppa;
 	}
 #endif
@@ -1314,9 +1336,17 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
+	struct timespec ts_start, ts_end, ts_run;
+
+	getnstimeofday(&ts_start);
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		pblk_trans_l2p_map_set(pblk, lba, ppa);
+		getnstimeofday(&ts_end);
+		ts_run = timespec_sub(ts_end, ts_start);
+
+		pblk->total_time += ts_run.tv_nsec;
+		pblk->num_of_stamp++;
 		return ;
 	}
 #endif

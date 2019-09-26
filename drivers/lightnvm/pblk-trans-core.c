@@ -69,6 +69,13 @@ static int pblk_trans_shift_size_get(sector_t size)
 	return ret;
 }
 
+static void pblk_trans_init_ratio(struct pblk_trans_ratio *ratio)
+{
+	atomic64_set(&ratio->total, 0);
+	atomic64_set(&ratio->write, 0);
+	atomic64_set(&ratio->read, 0);
+}
+
 static int pblk_trans_recov_from_mem(struct pblk *pblk)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
@@ -103,13 +110,17 @@ static int pblk_trans_recov_from_mem(struct pblk *pblk)
 	for(index = 0; index < dir->entry_num; index++) {
 		struct pblk_trans_entry *now = &dir->entry[index];
 		void *ptr;
+
 		now->id = index;
 		now->line = line;
 		now->paddr = ADDR_EMPTY;
+
 		atomic_set(&now->bit_idx, 0);
 		atomic_set(&now->hot_ratio, 0);
-		atomic64_set(&now->hit_ratio, 0);
-		atomic64_set(&now->total, 0);
+
+		pblk_trans_init_ratio(&now->hit);
+		pblk_trans_init_ratio(&now->call);
+
 		ptr = &pblk->trans_map[index*PBLK_TRANS_BLOCK_SIZE];
 		mb();
 		memcpy(cache->bucket, ptr, PBLK_TRANS_BLOCK_SIZE);
@@ -229,22 +240,30 @@ int pblk_trans_init(struct pblk *pblk)
 	return 0;
 }
 
-static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba) {
+int pblk_trans_ratio_inc(struct pblk_trans_ratio *ratio, int type)
+{
+	switch(type) {
+		case PBLK_L2P_READ:
+			atomic64_inc(&ratio->read);
+			break;
+		case PBLK_L2P_WRITE:
+			atomic64_inc(&ratio->write);
+			break;
+		default:
+			pr_warn("pblk-trans: Cannot find the type of the ratio\n");
+			return -1;
+	}
+	return 0;
+}
+
+static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba, int type) {
 	struct pblk_trans_dir *dir = &pblk->dir;
-	struct pblk_trans_entry *entry;
 
 	int bit_idx;
 	sector_t base = lba;
 
 	base = base >> dir->shift_size;
-	entry = &dir->entry[base];
-
-	entry->time_stamp = jiffies;
-	bit_idx = atomic_read(&entry->bit_idx);
-
-	atomic64_inc(&entry->total);
-	if(bit_idx != -1)
-		atomic64_inc(&entry->hit_ratio);
+	bit_idx = atomic_read(&dir->entry[base].bit_idx);
 
 	return bit_idx != -1;
 }
@@ -340,7 +359,9 @@ struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 		io_schedule();
 	}
 
-	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache hit */
+	pblk_trans_hit_calc(entry, PBLK_L2P_READ);
+
+	if (!pblk_trans_cache_hit(pblk, lba, PBLK_L2P_READ)) { /* cache hit */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			struct ppa_addr err;
 			pr_err("pblk-trans: map_get ==> update cache failed\n");
@@ -399,10 +420,13 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 	base = base >> dir->shift_size;
 	entry = &dir->entry[base];
 
+	pblk_trans_hit_calc(entry, PBLK_L2P_WRITE);
+
 	while(!spin_trylock(&cache->lock)) {
 		io_schedule();
 	}
-	if (!pblk_trans_cache_hit(pblk, lba)) { /* cache miss */
+
+	if (!pblk_trans_cache_hit(pblk, lba, PBLK_L2P_WRITE)) { /* cache miss */
 		if (pblk_trans_update_cache (pblk, lba)) {
 			pr_err("pblk-trans: map_set ==> update cache failed\n");
 			spin_unlock(&cache->lock);
@@ -431,13 +455,11 @@ void pblk_dir_sysfs_force(struct pblk *pblk, int force)
 	bench = 0; 
 	pblk_trans_evict_run(pblk, bench);
 	for(i = 0; i < dir->entry_num; i++) {
-		struct pblk_trans_entry *entry = &dir->entry[i];
-
-		atomic_set(&entry->hot_ratio, 0);
-
-		atomic64_set(&entry->hit_ratio, 0);
-		atomic64_set(&entry->total, 0);
+		pblk_trans_init_ratio(&dir->entry[i].hit);
+		pblk_trans_init_ratio(&dir->entry[i].call);
 	}
+	pblk->total_time = 0;
+	pblk->num_of_stamp = 1;
 	pr_info("pblk-trans: directory forced clear\n");
 	spin_unlock(&cache->lock);
 }

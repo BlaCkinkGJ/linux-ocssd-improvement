@@ -92,7 +92,7 @@ int pblk_trans_bench_calculate(struct pblk *pblk)
 {
 	int bench;
 
-	if (PBLK_TRANS_CACHE_SIZE > 5) {
+	if (PBLK_TRANS_CACHE_SIZE > 8) {
 		bench = PBLK_TRANS_CACHE_SIZE;
 		bench = bench >> 3; /* 12.5% contents evict */
 		bench = PBLK_TRANS_CACHE_SIZE - bench;

@@ -316,38 +316,89 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 	{
 		struct pblk_trans_dir *dir = &pblk->dir;
 		struct pblk_trans_cache *cache = &pblk->cache;
-		long long total_hit = 0;
-		long long total = 0;
 		int percent, weight;
 		int i;
+		long long total;
+		long long hit[3] = {0, 0, 0}, call[3] = {0, 0, 0};
 
-		for(i = 0; i < dir->entry_num; i++) {
-			struct pblk_trans_entry *entry = &dir->entry[i];
-			total_hit += atomic64_read(&entry->hit_ratio);
-			total += atomic64_read(&entry->total);
+		static const char *c_str[3] = {
+			" read ratio",
+			"write ratio",
+			"total ratio",
+		};
+		char bits[PBLK_TRANS_CACHE_SIZE*2];
+		int pos = 0;
+
+		if (dir->enable) {
+
+			for(i = 0; i < dir->entry_num; i++) {
+				struct pblk_trans_entry *entry = &dir->entry[i];
+				struct pblk_trans_ratio *hit_ratio = &entry->hit;
+				struct pblk_trans_ratio *call_ratio = &entry->call;
+
+				hit[0] += atomic64_read(&hit_ratio->read);
+				hit[1] += atomic64_read(&hit_ratio->write);
+				hit[2] += atomic64_read(&hit_ratio->total);
+
+				call[0] += atomic64_read(&call_ratio->read);
+				call[1] += atomic64_read(&call_ratio->write);
+				call[2] += atomic64_read(&call_ratio->total);
+			}
+
+			sz += snprintf(page+sz, PAGE_SIZE - sz, 
+					"#### time check ####\n"
+					"avg_time: %lld\n"
+					"#### size configuration ####\n"
+					"[content]\t[size]\n"
+					"l2p\t%15ld\n"
+					"dir\t%15ld\n"
+					"cache\t%15ld\n"
+					"bucket\t%15ld\n"
+					, (pblk->total_time / pblk->num_of_stamp)
+					, dir->entry_num * PBLK_TRANS_BLOCK_SIZE
+					, (dir->entry_num * sizeof(struct pblk_trans_entry))
+					, (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE
+					, (size_t)PBLK_TRANS_BLOCK_SIZE);
+
+			total = PBLK_TRANS_CACHE_SIZE;
+			weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+			percent = (weight*100)/total;
+
+			sz += snprintf(page+sz, PAGE_SIZE - sz, 
+					"#### cache usage ####\n"
+					"[used]\t[total]\t[ratio]\n" 
+					"%d\t%lld\t%d\n"
+					"#### hit status ####\n"
+					"[content]\t[hit]\t[call]\t[evict]\t[ratio]\n"
+					,weight, total, percent);
+
+			for (i = 0; i < 3; i++) {
+				percent = call[i] != 0 ? (hit[i]*100)/call[i]: 0;
+				sz += snprintf(page+sz, PAGE_SIZE - sz, 
+						"%s\t%lld\t%lld\t%lld\t%d\n",
+						c_str[i], hit[i], call[i], call[i] - hit[i], percent);
+			}
+
+			if(PBLK_TRANS_CACHE_SIZE <= 100) {
+				for(i = 0; i < PBLK_TRANS_CACHE_SIZE; i++)
+				{
+					int bit = test_bit(i, cache->free_bitmap);
+					int quotient = (i + 1) >> 5;
+					int remain = i + 1;
+
+					remain -= quotient * (1 << 5); 
+					bits[pos++] = bit + '0';
+					if(remain == 0)
+						bits[pos++] = '\n';
+					
+				}
+				bits[pos] = '\0';
+
+				sz += snprintf(page+sz, PAGE_SIZE - sz,
+						"\n%s\n"
+						, bits);
+			}
 		}
-
-		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
-		sz += snprintf(page+sz, PAGE_SIZE - sz, 
-				"l2p table size\t: %15ld\n", dir->entry_num * PBLK_TRANS_BLOCK_SIZE);
-
-		sz += snprintf(page+sz, PAGE_SIZE - sz, 
-				"directory size\t: %15ld\n"
-				, (dir->entry_num * sizeof(struct pblk_trans_entry)));
-
-		sz += snprintf(page+sz, PAGE_SIZE - sz, 
-				"cache size\t: %15ld\n", (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE);
-
-		sz += snprintf(page+sz, PAGE_SIZE - sz, 
-				"bucket size\t: %15ld\n", (size_t)PBLK_TRANS_BLOCK_SIZE);
-
-		percent = (total_hit*100)/total;
-		sz += snprintf(page+sz, PAGE_SIZE - sz, 
-				"[cache] hit/total = %lld/%lld(%d%%)\n",total_hit, total, percent);
-		total = PBLK_TRANS_CACHE_SIZE;
-		percent = (weight*100)/total;
-		sz += snprintf(page+sz, PAGE_SIZE - sz, 
-				"[cache] use/total = %d/%lld(%d%%)\n", weight, total, percent);
 	}
 	return sz;
 }

@@ -15,6 +15,26 @@
 
 #include "pblk.h"
 
+void pblk_trans_hit_calc(struct pblk_trans_entry *entry, int type)
+{
+	struct pblk_trans_ratio *hit, *call;
+	int bit_idx;
+
+	bit_idx = atomic_read(&entry->bit_idx);
+
+	hit = &entry->hit;
+	call = &entry->call; 
+
+	atomic64_inc(&call->total);
+	pblk_trans_ratio_inc(call, type);
+
+	if(bit_idx != -1) {
+		atomic64_inc(&hit->total);
+		pblk_trans_ratio_inc(hit, type);
+	}
+
+}
+
 void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
@@ -25,6 +45,9 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 
 	item.lba = item.lba >> dir->shift_size;
 	entry = &dir->entry[item.lba];
+
+	/* check the I/O */
+	entry->time_stamp = jiffies;
 
 	switch(item.type) {
 		case PBLK_ITEM_TYPE_DATA:

@@ -16,8 +16,6 @@
 
 #include "pblk.h"
 
-static DECLARE_RWSEM(rw_sem);
-
 static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
@@ -173,12 +171,11 @@ int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)
 {
 	int ret;
 
-	down_read(&rw_sem);
 	if (entry->line == NULL || entry->paddr == ADDR_EMPTY) {
+		pr_err("pblk-trans: invalid read status\n");
 		return -EINVAL;
 	}
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_READ);
-	up_read(&rw_sem);
 	
 	return ret;
 }
@@ -280,7 +277,6 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 
 	u64 paddr = entry->paddr;
 
-	down_write(&rw_sem);
 	hot_ratio = atomic_read(&entry->bit_idx);
 	if (entry->cache_ptr == NULL || entry->line == NULL
 			|| hot_ratio == -1) {
@@ -302,8 +298,6 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 	entry->line = line;
 
 	ret = pblk_line_submit_trans_io(pblk, entry, PBLK_WRITE);
-
-	up_write(&rw_sem);
 
 fail_to_write:
 	return ret;
