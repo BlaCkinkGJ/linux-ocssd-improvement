@@ -83,7 +83,7 @@
  */
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
-#define PBLK_TRANS_CACHE_SIZE (4000) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
