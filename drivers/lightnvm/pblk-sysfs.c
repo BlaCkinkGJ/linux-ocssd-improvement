@@ -346,15 +346,12 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			}
 
 			sz += snprintf(page+sz, PAGE_SIZE - sz, 
-					"#### time check ####\n"
-					"avg_time: %lld\n"
 					"#### size configuration ####\n"
 					"[content]\t[size]\n"
 					"l2p\t%15ld\n"
 					"dir\t%15ld\n"
 					"cache\t%15ld\n"
 					"bucket\t%15ld\n"
-					, (pblk->total_time / pblk->num_of_stamp)
 					, dir->entry_num * PBLK_TRANS_BLOCK_SIZE
 					, (dir->entry_num * sizeof(struct pblk_trans_entry))
 					, (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE

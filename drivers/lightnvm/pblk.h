@@ -70,7 +70,9 @@
  * 8000 => 512MB
  * 6000 => 384MB
  * 4000 => 256MB
+ * 3000 => 192MB
  * 2000 => 128MB
+ * 1000 => 64MB
  */
 
 /**
@@ -81,7 +83,7 @@
  */
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
-#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_CACHE_SIZE (4000) /* count per BLOCK_SIZE */
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
@@ -1306,16 +1308,16 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 								sector_t lba)
 {
 	struct ppa_addr ppa;
-	struct timespec ts_start, ts_end, ts_run;
+	// struct timespec ts_start, ts_end, ts_run;
 
-	getnstimeofday(&ts_start);
+	// getnstimeofday(&ts_start);
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		struct ppa_addr ppa = pblk_trans_l2p_map_get(pblk, lba);
-		getnstimeofday(&ts_end);
-		ts_run = timespec_sub(ts_end, ts_start);
-		pblk->total_time += ts_run.tv_nsec;
-		pblk->num_of_stamp++;
+		// getnstimeofday(&ts_end);
+		// ts_run = timespec_sub(ts_end, ts_start);
+		// pblk->total_time += ts_run.tv_nsec;
+		// pblk->num_of_stamp++;
 		return ppa;
 	}
 #endif
@@ -1336,17 +1338,17 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
-	struct timespec ts_start, ts_end, ts_run;
+	// struct timespec ts_start, ts_end, ts_run;
 
-	getnstimeofday(&ts_start);
+	// getnstimeofday(&ts_start);
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		pblk_trans_l2p_map_set(pblk, lba, ppa);
-		getnstimeofday(&ts_end);
-		ts_run = timespec_sub(ts_end, ts_start);
+		// getnstimeofday(&ts_end);
+		// ts_run = timespec_sub(ts_end, ts_start);
 
-		pblk->total_time += ts_run.tv_nsec;
-		pblk->num_of_stamp++;
+		// pblk->total_time += ts_run.tv_nsec;
+		// pblk->num_of_stamp++;
 		return ;
 	}
 #endif

@@ -458,8 +458,8 @@ void pblk_dir_sysfs_force(struct pblk *pblk, int force)
 		pblk_trans_init_ratio(&dir->entry[i].hit);
 		pblk_trans_init_ratio(&dir->entry[i].call);
 	}
-	pblk->total_time = 0;
-	pblk->num_of_stamp = 1;
+	// pblk->total_time = 0;
+	// pblk->num_of_stamp = 1;
 	pr_info("pblk-trans: directory forced clear\n");
 	spin_unlock(&cache->lock);
 }
