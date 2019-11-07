@@ -51,10 +51,10 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 
 	switch(item.type) {
 		case PBLK_ITEM_TYPE_DATA:
-			atomic_add(5, &entry->hot_ratio);
+			atomic_add(10, &entry->hot_ratio);
 			break;
 		case PBLK_ITEM_TYPE_JOURNAL:
-			atomic_add(20, &entry->hot_ratio); 
+			atomic_add(500, &entry->hot_ratio); 
 			break;
 		default:
 			atomic_inc(&entry->hot_ratio);
