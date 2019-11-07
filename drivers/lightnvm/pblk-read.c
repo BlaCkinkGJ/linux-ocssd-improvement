@@ -28,17 +28,11 @@ static int pblk_read_from_cache(struct pblk *pblk, struct bio *bio,
 				sector_t lba, struct ppa_addr ppa,
 				int bio_iter, bool advanced_bio)
 {
-	struct pblk_update_item item;
 #ifdef CONFIG_NVM_DEBUG
 	/* Callers must ensure that the ppa points to a cache address */
 	BUG_ON(pblk_ppa_empty(ppa));
 	BUG_ON(!pblk_addr_in_cache(ppa));
 #endif
-
-	item.type = bio->content_type;
-	item.lba = lba;
-
-	pblk_trans_do_calc(pblk, item);
 	return pblk_rb_copy_to_bio(&pblk->rwb, bio, lba, ppa,
 						bio_iter, advanced_bio);
 }
@@ -373,6 +367,7 @@ int pblk_submit_read(struct pblk *pblk, struct bio *bio)
 	unsigned int nr_secs = pblk_get_secs(bio);
 	struct pblk_g_ctx *r_ctx;
 	struct nvm_rq *rqd;
+	struct pblk_update_item item;
 	unsigned int bio_init_idx;
 	unsigned long read_bitmap; /* Max 64 ppas per request */
 	int ret = NVM_IO_ERR;
@@ -383,6 +378,12 @@ int pblk_submit_read(struct pblk *pblk, struct bio *bio)
 					(unsigned long long)blba, nr_secs);
 		return NVM_IO_ERR;
 	}
+
+	item.type = bio->content_type;
+	item.lba = blba;
+
+	pblk_trans_do_calc(pblk, item);
+
 
 	generic_start_io_acct(q, READ, bio_sectors(bio), &pblk->disk->part0);
 
