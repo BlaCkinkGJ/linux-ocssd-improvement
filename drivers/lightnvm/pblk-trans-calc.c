@@ -56,10 +56,16 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 		case PBLK_ITEM_TYPE_JOURNAL:
 			atomic_add(500, &entry->hot_ratio); 
 			break;
+		case PBLK_ITEM_TYPE_METADATA:
+			atomic_add(1000, &entry->hot_ratio);
+			break;
 		default:
 			atomic_inc(&entry->hot_ratio);
+			item.type = PBLK_ITEM_TYPE_UNKOWN;
 			break;
 	}
+
+	atomic_inc(&pblk->nr_content_type[item.type]);
 }
 
 #ifdef PBLK_CALC_THREAD_ENABLE

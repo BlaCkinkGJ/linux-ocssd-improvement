@@ -621,9 +621,13 @@ struct pblk_addrf {
 	int sec_ws_stripe;
 };
 
+#define NR_PBLK_ITEM_TYPE 4
+
 enum {
 	PBLK_ITEM_TYPE_DATA = 0,
 	PBLK_ITEM_TYPE_JOURNAL = 1,
+	PBLK_ITEM_TYPE_METADATA = 2,
+	PBLK_ITEM_TYPE_UNKOWN = 3,
 };
 
 struct pblk_update_item {
@@ -802,6 +806,8 @@ struct pblk {
 	 */
 	struct pblk_trans_cache cache;
 	struct pblk_trans_dir dir;
+
+	atomic_t nr_content_type[NR_PBLK_ITEM_TYPE];
 
 	struct list_head compl_list;
 

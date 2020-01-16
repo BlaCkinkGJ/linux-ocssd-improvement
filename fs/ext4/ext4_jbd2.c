@@ -273,6 +273,7 @@ int __ext4_handle_dirty_metadata(const char *where, unsigned int line,
 	set_buffer_meta(bh);
 	set_buffer_prio(bh);
 	if (ext4_handle_valid(handle)) {
+		bh->content_type = 2; /* METADATA TYPE*/
 		err = jbd2_journal_dirty_metadata(handle, bh);
 		/* Errors can only happen due to aborted journal or a nasty bug */
 		if (!is_handle_aborted(handle) && WARN_ON_ONCE(err)) {

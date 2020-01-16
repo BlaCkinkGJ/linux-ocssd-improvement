@@ -320,6 +320,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		int i;
 		long long total;
 		long long hit[3] = {0, 0, 0}, call[3] = {0, 0, 0};
+		int nr_content_type[NR_PBLK_ITEM_TYPE];
 
 		static const char *c_str[3] = {
 			" read ratio",
@@ -344,7 +345,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 				call[1] += atomic64_read(&call_ratio->write);
 				call[2] += atomic64_read(&call_ratio->total);
 			}
-
+			/*
 			sz += snprintf(page+sz, PAGE_SIZE - sz, 
 					"#### size configuration ####\n"
 					"[content]\t[size]\n"
@@ -356,6 +357,23 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 					, (dir->entry_num * sizeof(struct pblk_trans_entry))
 					, (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE
 					, (size_t)PBLK_TRANS_BLOCK_SIZE);
+			*/
+
+			for (i = 0; i < NR_PBLK_ITEM_TYPE; i++) {
+				nr_content_type[i] = atomic_read(&pblk->nr_content_type[i]);
+			}
+
+			sz += snprintf(page + sz, PAGE_SIZE - sz,
+					"#### SUBMIT ITEM RATIO ####\n"
+					"data   : %d\n"
+					"journal: %d\n"
+					"meta   : %d\n"
+					"unknown: %d\n\n",
+					nr_content_type[PBLK_ITEM_TYPE_DATA],
+					nr_content_type[PBLK_ITEM_TYPE_JOURNAL],
+					nr_content_type[PBLK_ITEM_TYPE_METADATA],
+					nr_content_type[PBLK_ITEM_TYPE_UNKOWN]
+					);
 
 			total = PBLK_TRANS_CACHE_SIZE;
 			weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
