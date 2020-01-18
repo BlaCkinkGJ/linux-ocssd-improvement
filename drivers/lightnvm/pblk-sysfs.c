@@ -365,13 +365,19 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 
 			sz += snprintf(page + sz, PAGE_SIZE - sz,
 					"#### SUBMIT ITEM RATIO ####\n"
-					"data   : %d\n"
-					"journal: %d\n"
-					"meta   : %d\n"
-					"unknown: %d\n\n",
+					"data         : %d\n"
+					"journal      : %d\n"
+					"superblock   : %d\n"
+					"data bitmap  : %d\n"
+					"inode bitmap : %d\n"
+					"inode        : %d\n"
+					"unknown      : %d\n\n",
 					nr_content_type[PBLK_ITEM_TYPE_DATA],
 					nr_content_type[PBLK_ITEM_TYPE_JOURNAL],
-					nr_content_type[PBLK_ITEM_TYPE_METADATA],
+					nr_content_type[PBLK_ITEM_TYPE_SUPERBLOCK],
+					nr_content_type[PBLK_ITEM_TYPE_DATA_BITMAP],
+					nr_content_type[PBLK_ITEM_TYPE_INODE_BITMAP],
+					nr_content_type[PBLK_ITEM_TYPE_INODE],
 					nr_content_type[PBLK_ITEM_TYPE_UNKOWN]
 					);
 

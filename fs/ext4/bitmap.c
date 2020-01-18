@@ -48,6 +48,7 @@ void ext4_inode_bitmap_csum_set(struct super_block *sb, ext4_group_t group,
 	if (!ext4_has_metadata_csum(sb))
 		return;
 
+	bh->content_type = 4; /* INODE BITMAPTYPE */
 	csum = ext4_chksum(sbi, sbi->s_csum_seed, (__u8 *)bh->b_data, sz);
 	gdp->bg_inode_bitmap_csum_lo = cpu_to_le16(csum & 0xFFFF);
 	if (sbi->s_desc_size >= EXT4_BG_INODE_BITMAP_CSUM_HI_END)
@@ -91,6 +92,7 @@ void ext4_block_bitmap_csum_set(struct super_block *sb, ext4_group_t group,
 	if (!ext4_has_metadata_csum(sb))
 		return;
 
+	bh->content_type = 3; /* DATA BITMAPTYPE */
 	csum = ext4_chksum(sbi, sbi->s_csum_seed, (__u8 *)bh->b_data, sz);
 	gdp->bg_block_bitmap_csum_lo = cpu_to_le16(csum & 0xFFFF);
 	if (sbi->s_desc_size >= EXT4_BG_BLOCK_BITMAP_CSUM_HI_END)

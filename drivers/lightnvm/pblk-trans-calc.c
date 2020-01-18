@@ -54,10 +54,11 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 			atomic_add(10, &entry->hot_ratio);
 			break;
 		case PBLK_ITEM_TYPE_JOURNAL:
+		case PBLK_ITEM_TYPE_SUPERBLOCK:
+		case PBLK_ITEM_TYPE_DATA_BITMAP:
+		case PBLK_ITEM_TYPE_INODE_BITMAP:
+		case PBLK_ITEM_TYPE_INODE:
 			atomic_add(500, &entry->hot_ratio); 
-			break;
-		case PBLK_ITEM_TYPE_METADATA:
-			atomic_add(1000, &entry->hot_ratio);
 			break;
 		default:
 			atomic_inc(&entry->hot_ratio);
