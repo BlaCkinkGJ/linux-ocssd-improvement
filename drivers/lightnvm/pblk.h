@@ -93,6 +93,7 @@
 #define TRANS_QUEUE_SIZE (sizeof(struct pblk_update_item) * PAGE_SIZE)
 
 #define PBLK_TRANS_EVICT_MSECS 1000
+#define PBLK_SYSFS_JSON_LINES_TYPE
 
 enum {
 	PBLK_READ		= READ,
