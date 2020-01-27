@@ -171,6 +171,11 @@ int pblk_trans_init(struct pblk *pblk)
 	bool is_valid;
 	int ret;
 
+	dir->time_stamp = 0;
+	dir->bench = 0;
+
+	dir->prev_gap = -1;
+
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
 	if (!dir->entry) {
 		return -ENOMEM;

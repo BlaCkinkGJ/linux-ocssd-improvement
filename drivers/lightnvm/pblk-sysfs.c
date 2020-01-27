@@ -184,7 +184,7 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 	/* Translation Block Information */
 	int nr_content_type[NR_PBLK_ITEM_TYPE];
 	int weight = -1, total = -1, percent = -1;
-	int i;
+	int i, bench = 0;
 
 	u64 wa_user, wa_gc, wa_pad;
 	u64 wa_int = -1;
@@ -307,6 +307,8 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 		total = PBLK_TRANS_CACHE_SIZE;
 		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 		percent = (weight*100)/total;
+
+		bench = dir->bench;
 	} // end of if
 
 	wa_user = atomic64_read(&pblk->user_wa);
@@ -320,7 +322,7 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 	}
 
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-			"{\"lines\":{\"config\":{\"nluns\":%d,\"nblks\":%d,\"nsecs\":%d},\"usage\":{\"data\":%d,\"trans\":%d,\"free\":%d,\"emeta\":%d,\"closed\":%d,\"bad\":%d,\"corrupt\":%d,\"nr_line\":{\"data\":%d,\"trans\":%d,\"total\":%d}}},\"gc\":{\"full\":%d,\"high\":%d,\"mid\":%d,\"low\":%d,\"empty\":%d,\"queue\":%d},\"data\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d},\"trans\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d,\"config\":{\"size\":{\"l2p\":%ld,\"dir\":%ld,\"cache\":%ld,\"bucket\":%ld}},\"capture\":{\"data\":%d,\"journal\":%d,\"super\":%d,\"bitmap\":{\"data\":%d,\"inode\":%d},\"inode\":%d,\"unknown\":%d},\"cache\":{\"use\":%d,\"total\":%d,\"ratio\":%d}},\"write_amp\":{\"user\":%lld,\"gc\":%lld,\"pad\":%lld,\"WA\":%llu.%05u}}",
+			"{\"lines\":{\"config\":{\"nluns\":%d,\"nblks\":%d,\"nsecs\":%d},\"usage\":{\"data\":%d,\"trans\":%d,\"free\":%d,\"emeta\":%d,\"closed\":%d,\"bad\":%d,\"corrupt\":%d,\"nr_line\":{\"data\":%d,\"trans\":%d,\"total\":%d}}},\"gc\":{\"full\":%d,\"high\":%d,\"mid\":%d,\"low\":%d,\"empty\":%d,\"queue\":%d},\"data\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d},\"trans\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d,\"config\":{\"size\":{\"l2p\":%ld,\"dir\":%ld,\"cache\":%ld,\"bucket\":%ld}},\"capture\":{\"data\":%d,\"journal\":%d,\"super\":%d,\"bitmap\":{\"data\":%d,\"inode\":%d},\"inode\":%d,\"unknown\":%d},\"cache\":{\"use\":%d,\"total\":%d,\"ratio\":%d,\"bench\":%d}},\"write_amp\":{\"user\":%lld,\"gc\":%lld,\"pad\":%lld,\"WA\":%llu.%05u}}",
 			/* config */
 			geo->all_luns,
 			lm->blk_per_line,
@@ -377,6 +379,7 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 			weight,
 			total,
 			percent,
+			bench,
 
 			wa_user,
 			wa_gc,
