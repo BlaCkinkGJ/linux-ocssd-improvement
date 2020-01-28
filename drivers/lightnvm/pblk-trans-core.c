@@ -174,6 +174,17 @@ int pblk_trans_init(struct pblk *pblk)
 	dir->time_stamp = 0;
 	dir->bench = 0;
 
+	if (dir->time_stamp == 0 || dir->bench == 0) {
+		if (PBLK_TRANS_CACHE_SIZE > 16) {
+			dir->bench = PBLK_DEFAULT_BENCH_SIZE;
+		} else if (PBLK_TRANS_CACHE_SIZE > 3) {
+			dir->bench = 2;
+		} else {
+			dir->bench = 1;
+		} // end of if
+		dir->time_stamp = jiffies;
+	}
+
 	dir->prev_gap = -1;
 
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);

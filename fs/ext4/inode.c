@@ -5107,7 +5107,7 @@ static int ext4_do_update_inode(handle_t *handle,
 
 	spin_lock(&ei->i_raw_lock);
 
-	bh->content_type = 5; /* INODE TYPE */
+	bh->content_type = PBLK_ITEM_TYPE_INODE;
 
 	/* For fields not tracked in the in-memory inode,
 	 * initialise them to zero for new inodes. */

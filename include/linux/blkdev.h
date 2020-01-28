@@ -46,6 +46,18 @@ struct rq_wb;
 struct blk_queue_stats;
 struct blk_stat_callback;
 
+#define NR_PBLK_ITEM_TYPE 7
+
+enum {
+	PBLK_ITEM_TYPE_DATA = 0,
+	PBLK_ITEM_TYPE_JOURNAL = 1,
+	PBLK_ITEM_TYPE_SUPERBLOCK = 2,
+	PBLK_ITEM_TYPE_DATA_BITMAP = 3,
+	PBLK_ITEM_TYPE_INODE_BITMAP = 4,
+	PBLK_ITEM_TYPE_INODE = 5,
+	PBLK_ITEM_TYPE_UNKOWN = 6,
+};
+
 #define BLKDEV_MIN_RQ	4
 #define BLKDEV_MAX_RQ	128	/* Default maximum */
 

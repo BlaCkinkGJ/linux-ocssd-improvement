@@ -381,6 +381,7 @@ int pblk_submit_read(struct pblk *pblk, struct bio *bio)
 
 	item.type = bio->content_type;
 	item.lba = blba;
+	item.is_write = false;
 
 	pblk_trans_do_calc(pblk, item);
 

@@ -66,6 +66,12 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 			break;
 	}
 
+	if (item.is_write) {
+			atomic_add(10, &entry->hot_ratio); 
+	} else {
+			atomic_add(50, &entry->hot_ratio); 
+	}
+
 	atomic_inc(&pblk->nr_content_type[item.type]);
 }
 

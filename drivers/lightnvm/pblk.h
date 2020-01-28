@@ -623,21 +623,10 @@ struct pblk_addrf {
 	int sec_ws_stripe;
 };
 
-#define NR_PBLK_ITEM_TYPE 7
-
-enum {
-	PBLK_ITEM_TYPE_DATA = 0,
-	PBLK_ITEM_TYPE_JOURNAL = 1,
-	PBLK_ITEM_TYPE_SUPERBLOCK = 2,
-	PBLK_ITEM_TYPE_DATA_BITMAP = 3,
-	PBLK_ITEM_TYPE_INODE_BITMAP = 4,
-	PBLK_ITEM_TYPE_INODE = 5,
-	PBLK_ITEM_TYPE_UNKOWN = 6,
-};
-
 struct pblk_update_item {
-	int type;
 	sector_t lba;
+	int type;
+	bool is_write;
 };
 
 enum {

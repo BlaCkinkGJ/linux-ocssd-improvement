@@ -92,42 +92,48 @@ int pblk_trans_bench_calculate(struct pblk *pblk)
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
 	unsigned long bench = dir->bench;
+	unsigned int before, after;
+	int gap, bias;
 
-	if (dir->time_stamp == 0 || dir->bench == 0) {
-		if (PBLK_TRANS_CACHE_SIZE > 16) {
-			bench = PBLK_DEFAULT_BENCH_SIZE;
-		} else if (PBLK_TRANS_CACHE_SIZE > 3) {
-			bench = 2;
-		} else {
-			bench = 1;
-		} // end of if
+	if ( PBLK_TRANS_CACHE_SIZE <= 16 && \
+			!time_before(dir->time_stamp, jiffies)) {
 		goto ret_bench;
 	}
 
-	if ( PBLK_TRANS_CACHE_SIZE > 16 && time_before(dir->time_stamp, jiffies)) {
-		unsigned int before = jiffies_to_msecs(dir->time_stamp);
-		unsigned int after = jiffies_to_msecs(jiffies);
+	/* update logic */
+	before = jiffies_to_msecs(dir->time_stamp);
+	after = jiffies_to_msecs(jiffies);
 
-		int gap = after - before;
-		int bias = bench >> 4;
+	gap = after - before;
+	bias = bench >> 4;
 
+	if (gap > 5) {
 		if (dir->prev_gap > gap) {
 			bench += bias;
 		} else {
-			if ((bench - bias) < (PBLK_DEFAULT_BENCH_SIZE)) {
-				bench = PBLK_DEFAULT_BENCH_SIZE;
-			} else {
-				bench -= bias;
-			}
+			bench -= bias;
 		}
+	} else {
+		goto ret_bench;
+	}
 
-		dir->prev_gap = gap;
-	} // end of if
+	dir->prev_gap = gap;
 
-ret_bench:
+	/* exception status check */
+	if (bench < PBLK_DEFAULT_BENCH_SIZE) {
+		bench = PBLK_DEFAULT_BENCH_SIZE;
+	}
+
+	if (bench > PBLK_TRANS_CACHE_SIZE) {
+		bench = PBLK_TRANS_CACHE_SIZE;
+	}
+
+	/* update the global variable value */
 	dir->time_stamp = jiffies;
 	dir->bench = bench;
-	return bench;
+
+ret_bench:
+	return dir->bench;
 }
 
 void pblk_trans_evict_run(struct pblk *pblk, int bench)
