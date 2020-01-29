@@ -192,6 +192,9 @@ int pblk_trans_init(struct pblk *pblk)
 		return -ENOMEM;
 	}
 
+	atomic64_set(&dir->nr_read, 0);
+	atomic64_set(&dir->nr_write, 0);
+
 	dir->op = &trans_op;
 	pr_info("pblk-trans: directory initialization phase: OK\n");
 

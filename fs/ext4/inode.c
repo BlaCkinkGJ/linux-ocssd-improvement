@@ -5752,6 +5752,7 @@ ext4_reserve_inode_write(handle_t *handle, struct inode *inode,
 	err = ext4_get_inode_loc(inode, iloc);
 	if (!err) {
 		BUFFER_TRACE(iloc->bh, "get_write_access");
+		iloc->bh->content_type = PBLK_ITEM_TYPE_INODE;
 		err = ext4_journal_get_write_access(handle, iloc->bh);
 		if (err) {
 			brelse(iloc->bh);

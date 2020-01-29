@@ -286,8 +286,8 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 
 	// TODO: Must be enabled after you fix whole fucking system
 	// TODO: check the emeta and smeta location. That might be disturbed you.
-	//if (paddr != ADDR_EMPTY) 
-	//	ret = ocssd_l2p_invalidate(pblk, entry, paddr);
+	// if (paddr != ADDR_EMPTY) 
+//		ret = ocssd_l2p_invalidate(pblk, entry, paddr);
 
 	if (ret)
 		goto fail_to_write;

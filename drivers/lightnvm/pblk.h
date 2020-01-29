@@ -64,13 +64,13 @@
 	(pblk->dev->geo.clba * pblk->dev->geo.csecs)
 #define USER_DEFINED_BLOCK_SIZE \
 	(2 * DEVICE_MULTIPLY_VALUE) /* 64KB */ 
-#define PBLK_DEFAULT_BENCH_SIZE (PBLK_TRANS_CACHE_SIZE - (PBLK_TRANS_CACHE_SIZE >> 3))
+#define PBLK_DEFAULT_BENCH_SIZE (PBLK_TRANS_CACHE_SIZE - (PBLK_TRANS_CACHE_SIZE >> 1)) /* 50% */
 /**
  * [FIO SETTING]
  *
  * 8000 => 512MB
  * 6000 => 384MB
- * 4000 => 256MB
+ * 4000 => 256MB 
  * 3000 => 192MB
  * 2000 => 128MB
  * 1000 => 64MB
@@ -84,7 +84,7 @@
  */
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
-#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_CACHE_SIZE (100) /* count per BLOCK_SIZE */
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
@@ -688,6 +688,9 @@ struct pblk_trans_dir {
 	unsigned long bench;
 
 	int prev_gap;
+
+	atomic64_t nr_read;
+	atomic64_t nr_write;
 
 #ifdef PBLK_CALC_THREAD_ENABLE
 	struct kfifo fifo;              /* manage to incoming data line write request */

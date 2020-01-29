@@ -58,6 +58,7 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 		case PBLK_ITEM_TYPE_DATA_BITMAP:
 		case PBLK_ITEM_TYPE_INODE_BITMAP:
 		case PBLK_ITEM_TYPE_INODE:
+		case PBLK_ITEM_TYPE_DIR:
 			atomic_add(500, &entry->hot_ratio); 
 			break;
 		default:
@@ -67,10 +68,13 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 	}
 
 	if (item.is_write) {
-			atomic_add(10, &entry->hot_ratio); 
+		atomic_add(10, &entry->hot_ratio); 
+		atomic64_inc(&dir->nr_write);
 	} else {
-			atomic_add(50, &entry->hot_ratio); 
+		atomic_add(50, &entry->hot_ratio); 
+		atomic64_inc(&dir->nr_read);
 	}
+
 
 	atomic_inc(&pblk->nr_content_type[item.type]);
 }

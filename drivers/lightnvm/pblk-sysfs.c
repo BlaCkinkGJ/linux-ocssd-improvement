@@ -190,6 +190,10 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 	u64 wa_int = -1;
 	u32 wa_frac = -1;
 
+	u64 nr_read, nr_write;
+	u64 read_int = -1;
+	u32 read_frac = -1;
+
 	spin_lock(&l_mg->free_lock);
 	cur_data = (l_mg->data_line) ? l_mg->data_line->id : -1;
 	cur_log = (l_mg->log_line) ? l_mg->log_line->id : -1;
@@ -321,8 +325,17 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 		wa_int = div_u64_rem(wa_int, 100000, &wa_frac);
 	}
 
+	nr_read = atomic64_read(&dir->nr_read);
+	nr_write = atomic64_read(&dir->nr_write);
+
+	if (nr_read) {
+		read_int = nr_read * 100000;
+		read_int = div_u64(read_int, nr_read + nr_write);
+		read_int = div_u64_rem(read_int, 100000, &read_frac);
+	}
+
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-			"{\"lines\":{\"config\":{\"nluns\":%d,\"nblks\":%d,\"nsecs\":%d},\"usage\":{\"data\":%d,\"trans\":%d,\"free\":%d,\"emeta\":%d,\"closed\":%d,\"bad\":%d,\"corrupt\":%d,\"nr_line\":{\"data\":%d,\"trans\":%d,\"total\":%d}}},\"gc\":{\"full\":%d,\"high\":%d,\"mid\":%d,\"low\":%d,\"empty\":%d,\"queue\":%d},\"data\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d},\"trans\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d,\"config\":{\"size\":{\"l2p\":%ld,\"dir\":%ld,\"cache\":%ld,\"bucket\":%ld}},\"capture\":{\"data\":%d,\"journal\":%d,\"super\":%d,\"bitmap\":{\"data\":%d,\"inode\":%d},\"inode\":%d,\"unknown\":%d},\"cache\":{\"use\":%d,\"total\":%d,\"ratio\":%d,\"bench\":%d}},\"write_amp\":{\"user\":%lld,\"gc\":%lld,\"pad\":%lld,\"WA\":%llu.%05u}}",
+			"{\"lines\":{\"config\":{\"nluns\":%d,\"nblks\":%d,\"nsecs\":%d},\"usage\":{\"data\":%d,\"trans\":%d,\"free\":%d,\"emeta\":%d,\"closed\":%d,\"bad\":%d,\"corrupt\":%d,\"nr_line\":{\"data\":%d,\"trans\":%d,\"total\":%d}}},\"gc\":{\"full\":%d,\"high\":%d,\"mid\":%d,\"low\":%d,\"empty\":%d,\"queue\":%d},\"data\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d},\"trans\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d,\"config\":{\"size\":{\"l2p\":%ld,\"dir\":%ld,\"cache\":%ld,\"bucket\":%ld}},\"capture\":{\"data\":%d,\"journal\":%d,\"super\":%d,\"bitmap\":{\"data\":%d,\"inode\":%d},\"inode\":%d,\"dir\":%d,\"unknown\":%d},\"rw\":{\"read\":%llu,\"write\":%llu,\"ratio\":%llu.%05u},\"cache\":{\"use\":%d,\"total\":%d,\"ratio\":%d,\"bench\":%d}},\"write_amp\":{\"user\":%lld,\"gc\":%lld,\"pad\":%lld,\"WA\":%llu.%05u}}",
 			/* config */
 			geo->all_luns,
 			lm->blk_per_line,
@@ -374,7 +387,13 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 			nr_content_type[PBLK_ITEM_TYPE_DATA_BITMAP],
 			nr_content_type[PBLK_ITEM_TYPE_INODE_BITMAP],
 			nr_content_type[PBLK_ITEM_TYPE_INODE],
+			nr_content_type[PBLK_ITEM_TYPE_DIR],
 			nr_content_type[PBLK_ITEM_TYPE_UNKOWN],
+
+			nr_read,
+			nr_write,
+			read_int,
+			read_frac,
 
 			weight,
 			total,
