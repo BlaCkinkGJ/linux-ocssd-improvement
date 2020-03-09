@@ -54,8 +54,8 @@ static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry 
 	if (!meta_list)
 		return -ENOMEM;
 
-	ppa_list = meta_list + pblk_dma_ppa_size;
-	dma_ppa_list = dma_meta_list + pblk_dma_ppa_size;
+	ppa_list = meta_list + pblk_dma_meta_size;
+	dma_ppa_list = dma_meta_list + pblk_dma_meta_size;
 
 	left_ppas = cache->bucket_sec;
 

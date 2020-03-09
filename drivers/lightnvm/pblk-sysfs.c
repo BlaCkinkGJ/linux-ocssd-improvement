@@ -276,7 +276,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		geo->all_luns, lm->blk_per_line, lm->sec_per_line);
 
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-		"lines:d:%d,l:%d,t:%d-f:%d,m:%d/%d,c:%d,b:%d,co:%d(d:%d,l:%d,t:%d)t:%d\n",
+		"lines:d:%d,l:%d,t:%d-f:%d,m:%d/%d,c:%d,b:%d,co:%d(d:%d,l:%d,t:%d)to:%d\n",
 					cur_data, cur_log, cur_trans,
 					nr_free_lines,
 					emeta_line_cnt, meta_weight,
@@ -346,15 +346,12 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			}
 
 			sz += snprintf(page+sz, PAGE_SIZE - sz, 
-					"#### time check ####\n"
-					"avg_time: %lld\n"
 					"#### size configuration ####\n"
 					"[content]\t[size]\n"
 					"l2p\t%15ld\n"
 					"dir\t%15ld\n"
 					"cache\t%15ld\n"
 					"bucket\t%15ld\n"
-					, (pblk->total_time / pblk->num_of_stamp)
 					, dir->entry_num * PBLK_TRANS_BLOCK_SIZE
 					, (dir->entry_num * sizeof(struct pblk_trans_entry))
 					, (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE
@@ -364,13 +361,22 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 			weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 			percent = (weight*100)/total;
 
+			sz += snprintf(page+sz, PAGE_SIZE-sz,
+					"#### Current I/O Status ####\n"
+					"data: %lu\tjournal: %lu\n"
+					, atomic64_read(&pblk->nr_item[0])
+					, atomic64_read(&pblk->nr_item[1]));
+
 			sz += snprintf(page+sz, PAGE_SIZE - sz, 
-					"#### cache usage ####\n"
+					"#### Cache Usage ####\n"
 					"[used]\t[total]\t[ratio]\n" 
 					"%d\t%lld\t%d\n"
+					, weight, total, percent);
+
+#if 0
+			sz += snprintf(page+sz, PAGE_SIZE - sz, 
 					"#### hit status ####\n"
-					"[content]\t[hit]\t[call]\t[evict]\t[ratio]\n"
-					,weight, total, percent);
+					"[content]\t[hit]\t[call]\t[evict]\t[ratio]\n");
 
 			for (i = 0; i < 3; i++) {
 				percent = call[i] != 0 ? (hit[i]*100)/call[i]: 0;
@@ -378,18 +384,19 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 						"%s\t%lld\t%lld\t%lld\t%d\n",
 						c_str[i], hit[i], call[i], call[i] - hit[i], percent);
 			}
+#endif
 
-			if(PBLK_TRANS_CACHE_SIZE <= 100) {
+			if(PBLK_TRANS_CACHE_SIZE <= PAGE_SIZE-(sz+100)) { /* SHOW INTERNAL DISPATCH SETTING */
 				for(i = 0; i < PBLK_TRANS_CACHE_SIZE; i++)
 				{
 					int bit = test_bit(i, cache->free_bitmap);
 					int quotient = (i + 1) >> 5;
-					int remain = i + 1;
+					//int remain = i + 1;
 
-					remain -= quotient * (1 << 5); 
+					// remain -= quotient * (1 << 5); 
 					bits[pos++] = bit + '0';
-					if(remain == 0)
-						bits[pos++] = '\n';
+					//if(remain == 0)
+					//	bits[pos++] = '\n';
 					
 				}
 				bits[pos] = '\0';

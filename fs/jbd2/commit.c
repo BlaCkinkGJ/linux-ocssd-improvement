@@ -699,6 +699,7 @@ start_journal_io:
 				/*
 				 * Compute checksum.
 				 */
+				bh->content_type = 1; /* this is journal */
 				if (jbd2_has_feature_checksum(journal)) {
 					crc32_sum =
 					    jbd2_checksum_data(crc32_sum, bh);

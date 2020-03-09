@@ -91,16 +91,18 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 int pblk_trans_bench_calculate(struct pblk *pblk)
 {
 	int bench;
-
+/*
 	if (PBLK_TRANS_CACHE_SIZE > 8) {
 		bench = PBLK_TRANS_CACHE_SIZE;
-		bench = bench >> 3; /* 12.5% contents evict */
+		bench = bench >> 3; // 12.5% contents evict
 		bench = PBLK_TRANS_CACHE_SIZE - bench;
 	} else if (PBLK_TRANS_CACHE_SIZE > 3) {
 		bench = 2;
 	} else {
 		bench = 1;
 	}
+*/
+	bench = PBLK_TRANS_CACHE_SIZE - PBLK_TRANS_EVICT_SIZE;
 
 	return bench;
 }

@@ -50,16 +50,20 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 	entry->time_stamp = jiffies;
 
 	switch(item.type) {
+#if 1
 		case PBLK_ITEM_TYPE_DATA:
-			atomic_add(5, &entry->hot_ratio);
+			atomic_add(10, &entry->hot_ratio);
 			break;
 		case PBLK_ITEM_TYPE_JOURNAL:
-			atomic_add(20, &entry->hot_ratio); 
+			atomic_add(10000, &entry->hot_ratio); 
+			//atomic_add(1000, &entry->hot_ratio); 
 			break;
+#endif
 		default:
 			atomic_inc(&entry->hot_ratio);
 			break;
 	}
+	atomic64_inc(&pblk->nr_item[item.type]);
 }
 
 #ifdef PBLK_CALC_THREAD_ENABLE

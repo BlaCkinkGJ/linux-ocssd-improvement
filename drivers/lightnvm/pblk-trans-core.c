@@ -44,31 +44,6 @@ void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset)
 	return ret;
 }
 
-static int pblk_trans_entry_shift_size(struct pblk *pblk)
-{
-	sector_t exponent= 0;
-
-	if (pblk->addrf_len < 32) {
-		exponent = 2;
-	} else {
-		exponent = 3;
-	}
-	
-	return exponent;
-}
-
-static int pblk_trans_shift_size_get(sector_t size)
-{
-	int ret = -1;
-
-	while (size > 0) {
-		ret++;
-		size = size >> 1;
-	}
-
-	return ret;
-}
-
 static void pblk_trans_init_ratio(struct pblk_trans_ratio *ratio)
 {
 	atomic64_set(&ratio->total, 0);
@@ -260,10 +235,10 @@ static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba, int type) {
 	struct pblk_trans_dir *dir = &pblk->dir;
 
 	int bit_idx;
-	sector_t base = lba;
+	sector_t entry_id;
 
-	base = base >> dir->shift_size;
-	bit_idx = atomic_read(&dir->entry[base].bit_idx);
+	entry_id = pblk_get_entry_id(lba, dir->shift_size);
+	bit_idx = atomic_read(&dir->entry[entry_id].bit_idx);
 
 	return bit_idx != -1;
 }
@@ -273,17 +248,16 @@ static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk,
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	sector_t base = lba;
-	sector_t offset = base; 
+	sector_t entry_id, offset;
 	struct ppa_addr ppa;
 	void *ptr;
 
-	base = base >> dir->shift_size;
-	offset -= base * (1 << dir->shift_size); 
+	entry_id = pblk_get_entry_id(lba, dir->shift_size);
+	offset = pblk_get_entry_offset(lba, entry_id, dir->shift_size);
 
 	pblk_ppa_set_empty(&ppa);
 
-	ptr = dir->entry[base].cache_ptr;
+	ptr = dir->entry[entry_id].cache_ptr;
 
 	if (ptr == NULL) { /* cache miss */
 		pr_warn("pblk-trans: cache miss occured in get sequence\n");
@@ -310,11 +284,11 @@ static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)
 	struct pblk_trans_entry *entry;
 
 	unsigned char *cache_chk = NULL;
-	sector_t base = lba;
+	sector_t entry_id;
 	int bit = -1;
 
-	base = base >> dir->shift_size;
-	entry = &dir->entry[base];
+	entry_id = pblk_get_entry_id(lba, dir->shift_size);
+	entry = &dir->entry[entry_id];
 
 retry_get_bit:
 	bit = find_first_zero_bit(cache->free_bitmap, 
@@ -350,10 +324,10 @@ struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)
 	struct pblk_trans_entry *entry;
 	struct ppa_addr ppa;
 
-	sector_t base = lba;
+	sector_t entry_id;
 
-	base = base >> dir->shift_size;
-	entry = &dir->entry[base];
+	entry_id = pblk_get_entry_id(lba, dir->shift_size);
+	entry = &dir->entry[entry_id];
 
 	while(!spin_trylock(&cache->lock)) {
 		io_schedule();
@@ -381,14 +355,14 @@ static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,
 {
 	struct pblk_trans_dir *dir = &pblk->dir;
 
-	sector_t base = lba;
-	sector_t offset = base; 
+	sector_t entry_id;
+	sector_t offset;
 	void *ptr;
 
-	base = base >> dir->shift_size;
-	offset -= base * (1 << dir->shift_size); 
+	entry_id = pblk_get_entry_id(lba, dir->shift_size);
+	offset = pblk_get_entry_offset(lba, entry_id, dir->shift_size);
 
-	ptr = dir->entry[base].cache_ptr;
+	ptr = dir->entry[entry_id].cache_ptr;
 
 	if (ptr == NULL) /* cache miss */
 		return -EINVAL;
@@ -414,11 +388,11 @@ int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,
 	struct pblk_trans_cache *cache = &pblk->cache;
 	struct pblk_trans_dir *dir = &pblk->dir;
 	struct pblk_trans_entry *entry;
-	sector_t base = lba;
+	sector_t entry_id;
 	int ret;
 
-	base = base >> dir->shift_size;
-	entry = &dir->entry[base];
+	entry_id = pblk_get_entry_id(lba, dir->shift_size);
+	entry = &dir->entry[entry_id];
 
 	pblk_trans_hit_calc(entry, PBLK_L2P_WRITE);
 
