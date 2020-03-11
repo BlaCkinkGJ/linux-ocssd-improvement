@@ -160,7 +160,257 @@ static ssize_t pblk_sysfs_ppaf(struct pblk *pblk, char *page)
 	return sz;
 }
 
-static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
+static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
+{
+	struct nvm_tgt_dev *dev = pblk->dev;
+	struct nvm_geo *geo = &dev->geo;
+	struct pblk_line_meta *lm = &pblk->lm;
+	struct pblk_line_mgmt *l_mg = &pblk->l_mg;
+	struct pblk_line *line;
+	struct pblk_trans_dir *dir = &pblk->dir;
+	struct pblk_trans_cache *cache = &pblk->cache;
+
+	ssize_t sz = 0;
+
+	int nr_free_lines;
+	int cur_data, cur_log, cur_trans;
+	int free_line_cnt = 0, closed_line_cnt = 0, emeta_line_cnt = 0;
+	int d_line_cnt = 0, l_line_cnt = 0, t_line_cnt = 0;
+	int gc_full = 0, gc_high = 0, gc_mid = 0, gc_low = 0, gc_empty = 0;
+	int bad = 0, cor = 0;
+	int d_msecs = 0, d_cur_sec = 0, d_vsc = 0, d_sec_in_line = 0, d_map_weight = 0, d_meta_weight = 0;
+	int t_msecs = 0, t_cur_sec = 0, t_vsc = 0, t_sec_in_line = 0, t_map_weight = 0, t_meta_weight = 0;
+
+	/* Translation Block Information */
+	int nr_content_type[NR_PBLK_ITEM_TYPE];
+	int weight = -1, total = -1, percent = -1;
+	int i, bench = 0;
+
+	u64 wa_user, wa_gc, wa_pad;
+	u64 wa_int = -1;
+	u32 wa_frac = -1;
+
+	u64 nr_read, nr_write;
+	u64 read_int = -1;
+	u32 read_frac = -1;
+
+	spin_lock(&l_mg->free_lock);
+	cur_data = (l_mg->data_line) ? l_mg->data_line->id : -1;
+	cur_log = (l_mg->log_line) ? l_mg->log_line->id : -1;
+	cur_trans = (l_mg->trans_line) ? l_mg->trans_line->id : -1;
+	nr_free_lines = l_mg->nr_free_lines;
+
+	list_for_each_entry(line, &l_mg->free_list, list)
+		free_line_cnt++;
+	spin_unlock(&l_mg->free_lock);
+
+	spin_lock(&l_mg->close_lock);
+	list_for_each_entry(line, &l_mg->emeta_list, list)
+		emeta_line_cnt++;
+	spin_unlock(&l_mg->close_lock);
+
+	spin_lock(&l_mg->gc_lock);
+	list_for_each_entry(line, &l_mg->gc_full_list, list) {
+		if (line->type == PBLK_LINETYPE_DATA)
+			d_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_LOG)
+			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
+		closed_line_cnt++;
+		gc_full++;
+	}
+
+	list_for_each_entry(line, &l_mg->gc_high_list, list) {
+		if (line->type == PBLK_LINETYPE_DATA)
+			d_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_LOG)
+			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
+		closed_line_cnt++;
+		gc_high++;
+	}
+
+	list_for_each_entry(line, &l_mg->gc_mid_list, list) {
+		if (line->type == PBLK_LINETYPE_DATA)
+			d_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_LOG)
+			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
+		closed_line_cnt++;
+		gc_mid++;
+	}
+
+	list_for_each_entry(line, &l_mg->gc_low_list, list) {
+		if (line->type == PBLK_LINETYPE_DATA)
+			d_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_LOG)
+			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
+		closed_line_cnt++;
+		gc_low++;
+	}
+
+	list_for_each_entry(line, &l_mg->gc_empty_list, list) {
+		if (line->type == PBLK_LINETYPE_DATA)
+			d_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_LOG)
+			l_line_cnt++;
+		else if (line->type == PBLK_LINETYPE_TRANS)
+			t_line_cnt++;
+		closed_line_cnt++;
+		gc_empty++;
+	}
+
+	list_for_each_entry(line, &l_mg->bad_list, list)
+		bad++;
+	list_for_each_entry(line, &l_mg->corrupt_list, list)
+		cor++;
+	spin_unlock(&l_mg->gc_lock);
+
+	spin_lock(&l_mg->free_lock);
+	if (l_mg->data_line) {
+		d_cur_sec = l_mg->data_line->cur_sec;
+		d_msecs = l_mg->data_line->left_msecs;
+		d_vsc = le32_to_cpu(*l_mg->data_line->vsc);
+		d_sec_in_line = l_mg->data_line->sec_in_line;
+		d_meta_weight = bitmap_weight(&l_mg->meta_bitmap,
+							PBLK_DATA_LINES);
+		d_map_weight = bitmap_weight(l_mg->data_line->map_bitmap,
+							lm->sec_per_line);
+	}
+	spin_unlock(&l_mg->free_lock);
+
+	if (nr_free_lines != free_line_cnt)
+		pr_err("pblk: corrupted free line list:%d/%d\n",
+						nr_free_lines, free_line_cnt);
+
+	spin_lock(&l_mg->free_lock);
+	if (l_mg->trans_line) {
+		t_cur_sec = l_mg->trans_line->cur_sec;
+		t_msecs = l_mg->trans_line->left_msecs;
+		t_vsc = le32_to_cpu(*l_mg->trans_line->vsc);
+		t_sec_in_line = l_mg->trans_line->sec_in_line;
+		t_meta_weight = bitmap_weight(&l_mg->meta_bitmap,
+							PBLK_DATA_LINES);
+		t_map_weight = bitmap_weight(l_mg->trans_line->map_bitmap,
+							lm->sec_per_line);
+	}
+	spin_unlock(&l_mg->free_lock);
+
+
+	if (dir->enable) {
+
+		for (i = 0; i < NR_PBLK_ITEM_TYPE; i++) {
+			nr_content_type[i] = atomic_read(&pblk->nr_content_type[i]);
+		}
+
+		total = PBLK_TRANS_CACHE_SIZE;
+		weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
+		percent = (weight*100)/total;
+
+		bench = dir->bench;
+	} // end of if
+
+	wa_user = atomic64_read(&pblk->user_wa);
+	wa_gc = atomic64_read(&pblk->gc_wa);
+	wa_pad = atomic64_read(&pblk->pad_wa);
+
+	if (wa_user) {
+		wa_int = (wa_user + wa_gc + wa_pad) * 100000;
+		wa_int = div_u64(wa_int, wa_user);
+		wa_int = div_u64_rem(wa_int, 100000, &wa_frac);
+	}
+
+	nr_read = atomic64_read(&dir->nr_read);
+	nr_write = atomic64_read(&dir->nr_write);
+
+	if (nr_read) {
+		read_int = nr_read * 100000;
+		read_int = div_u64(read_int, nr_read + nr_write);
+		read_int = div_u64_rem(read_int, 100000, &read_frac);
+	}
+
+	sz += snprintf(page + sz, PAGE_SIZE - sz,
+			"{\"lines\":{\"config\":{\"nluns\":%d,\"nblks\":%d,\"nsecs\":%d},\"usage\":{\"data\":%d,\"trans\":%d,\"free\":%d,\"emeta\":%d,\"closed\":%d,\"bad\":%d,\"corrupt\":%d,\"nr_line\":{\"data\":%d,\"trans\":%d,\"total\":%d}}},\"gc\":{\"full\":%d,\"high\":%d,\"mid\":%d,\"low\":%d,\"empty\":%d,\"queue\":%d},\"data\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d},\"trans\":{\"line\":{\"cur\":%d},\"sec\":{\"cur\":%d,\"left\":%d,\"total\":%d},\"vsc\":%d,\"map\":{\"weight\":%d,\"total\":%d},\"meta_weight\":%d,\"config\":{\"size\":{\"l2p\":%ld,\"dir\":%ld,\"cache\":%ld,\"bucket\":%ld}},\"capture\":{\"data\":%d,\"journal\":%d,\"super\":%d,\"bitmap\":{\"data\":%d,\"inode\":%d},\"inode\":%d,\"dir\":%d,\"unknown\":%d},\"rw\":{\"read\":%llu,\"write\":%llu,\"ratio\":%llu.%05u},\"cache\":{\"use\":%d,\"total\":%d,\"ratio\":%d,\"bench\":%d}},\"write_amp\":{\"user\":%lld,\"gc\":%lld,\"pad\":%lld,\"WA\":%llu.%05u}}",
+			/* config */
+			geo->all_luns,
+			lm->blk_per_line,
+			lm->sec_per_line,
+			/* usage */
+			cur_data,
+			cur_trans,
+			nr_free_lines,
+			emeta_line_cnt,
+			closed_line_cnt,
+			bad,
+			cor,
+				d_line_cnt,
+				t_line_cnt,
+				l_mg->nr_lines,
+			/* gc */
+			gc_full,
+			gc_high,
+			gc_mid,
+			gc_low,
+			gc_empty,
+			atomic_read(&pblk->gc.read_inflight_gc),
+			/* data */
+			cur_data,
+				d_cur_sec,
+				d_msecs,
+				d_sec_in_line,
+			d_vsc,
+				d_map_weight,
+				lm->sec_per_line,
+			d_meta_weight,
+			/* trans */
+			cur_trans,
+				t_cur_sec,
+				t_msecs,
+				t_sec_in_line,
+			t_vsc,
+				t_map_weight,
+				lm->sec_per_line,
+			t_meta_weight,
+			dir->entry_num * PBLK_TRANS_BLOCK_SIZE,
+			dir->entry_num * sizeof(struct pblk_trans_entry),
+			(size_t) PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE,
+			(size_t) PBLK_TRANS_BLOCK_SIZE,
+
+			nr_content_type[PBLK_ITEM_TYPE_DATA],
+			nr_content_type[PBLK_ITEM_TYPE_JOURNAL],
+			nr_content_type[PBLK_ITEM_TYPE_SUPERBLOCK],
+			nr_content_type[PBLK_ITEM_TYPE_DATA_BITMAP],
+			nr_content_type[PBLK_ITEM_TYPE_INODE_BITMAP],
+			nr_content_type[PBLK_ITEM_TYPE_INODE],
+			nr_content_type[PBLK_ITEM_TYPE_DIR],
+			nr_content_type[PBLK_ITEM_TYPE_UNKOWN],
+
+			nr_read,
+			nr_write,
+			read_int,
+			read_frac,
+
+			weight,
+			total,
+			percent,
+			bench,
+
+			wa_user,
+			wa_gc,
+			wa_pad,
+			wa_int,
+			wa_frac
+		);
+
+	return sz;
+}
+
+static ssize_t __pblk_sysfs_original_lines(struct pblk *pblk, char *page)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 	struct nvm_geo *geo = &dev->geo;
@@ -320,13 +570,13 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		int i;
 		long long total;
 		long long hit[3] = {0, 0, 0}, call[3] = {0, 0, 0};
+		int nr_content_type[NR_PBLK_ITEM_TYPE];
 
 		static const char *c_str[3] = {
 			" read ratio",
 			"write ratio",
 			"total ratio",
 		};
-		char bits[PBLK_TRANS_CACHE_SIZE*2];
 		int pos = 0;
 
 		if (dir->enable) {
@@ -344,7 +594,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 				call[1] += atomic64_read(&call_ratio->write);
 				call[2] += atomic64_read(&call_ratio->total);
 			}
-
+			/*
 			sz += snprintf(page+sz, PAGE_SIZE - sz, 
 					"#### size configuration ####\n"
 					"[content]\t[size]\n"
@@ -356,6 +606,29 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 					, (dir->entry_num * sizeof(struct pblk_trans_entry))
 					, (size_t)PBLK_TRANS_BLOCK_SIZE * PBLK_TRANS_CACHE_SIZE
 					, (size_t)PBLK_TRANS_BLOCK_SIZE);
+			*/
+
+			for (i = 0; i < NR_PBLK_ITEM_TYPE; i++) {
+				nr_content_type[i] = atomic_read(&pblk->nr_content_type[i]);
+			}
+
+			sz += snprintf(page + sz, PAGE_SIZE - sz,
+					"#### submit item ratio ####\n"
+					"data         : %d\n"
+					"journal      : %d\n"
+					"superblock   : %d\n"
+					"data bitmap  : %d\n"
+					"inode bitmap : %d\n"
+					"inode        : %d\n"
+					"unknown      : %d\n\n",
+					nr_content_type[PBLK_ITEM_TYPE_DATA],
+					nr_content_type[PBLK_ITEM_TYPE_JOURNAL],
+					nr_content_type[PBLK_ITEM_TYPE_SUPERBLOCK],
+					nr_content_type[PBLK_ITEM_TYPE_DATA_BITMAP],
+					nr_content_type[PBLK_ITEM_TYPE_INODE_BITMAP],
+					nr_content_type[PBLK_ITEM_TYPE_INODE],
+					nr_content_type[PBLK_ITEM_TYPE_UNKOWN]
+					);
 
 			total = PBLK_TRANS_CACHE_SIZE;
 			weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
@@ -408,6 +681,15 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		}
 	}
 	return sz;
+}
+
+static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
+{
+#ifdef PBLK_SYSFS_JSON_LINES_TYPE
+	return __pblk_sysfs_json_lines(pblk, page);
+#else
+	return __pblk_sysfs_original_lines(pblk, page);
+#endif
 }
 
 static ssize_t pblk_sysfs_lines_info(struct pblk *pblk, char *page)

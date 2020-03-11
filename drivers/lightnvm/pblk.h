@@ -63,14 +63,17 @@
 	(pblk->dev->geo.clba * pblk->dev->geo.csecs)
 #define USER_DEFINED_BLOCK_SIZE \
 	(2 * DEVICE_MULTIPLY_VALUE) /* 64KB */ 
+#define PBLK_DEFAULT_BENCH_SIZE (PBLK_TRANS_CACHE_SIZE - (PBLK_TRANS_CACHE_SIZE >> 1)) /* 50% */
 
 /**
  * [FIO SETTING]
  *
  * 8000 => 512MB
  * 6000 => 384MB
- * 4000 => 256MB
+ * 4000 => 256MB 
+ * 3000 => 192MB
  * 2000 => 128MB
+ * 1000 => 64MB
  */
 
 /**
@@ -86,6 +89,7 @@
  */
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
+
 #define PBLK_TRANS_CACHE_SIZE (180) /* count per BLOCK_SIZE */
 #define PBLK_TRANS_EVICT_SIZE (18) /* DEFAULT EVICT SIZE ==> 7*/
 
@@ -97,6 +101,7 @@
 #define TRANS_QUEUE_SIZE (sizeof(struct pblk_update_item) * PAGE_SIZE)
 
 #define PBLK_TRANS_EVICT_MSECS 1000
+#define PBLK_SYSFS_JSON_LINES_TYPE
 
 enum {
 	PBLK_READ		= READ,
@@ -625,15 +630,10 @@ struct pblk_addrf {
 	int sec_ws_stripe;
 };
 
-enum {
-	PBLK_ITEM_TYPE_DATA = 0,
-	PBLK_ITEM_TYPE_JOURNAL = 1,
-	PBLK_NR_ITEM_TYPES = 2 
-};
-
 struct pblk_update_item {
-	int type;
 	sector_t lba;
+	int type;
+	bool is_write;
 };
 
 enum {
@@ -690,6 +690,14 @@ struct pblk_trans_dir {
 	int enable;						/* initial recovery successful then this is true */
 
 	int shift_size;
+
+	unsigned long time_stamp;
+	unsigned long bench;
+
+	int prev_gap;
+
+	atomic64_t nr_read;
+	atomic64_t nr_write;
 
 #ifdef PBLK_CALC_THREAD_ENABLE
 	struct kfifo fifo;              /* manage to incoming data line write request */
@@ -808,7 +816,7 @@ struct pblk {
 	struct pblk_trans_cache cache;
 	struct pblk_trans_dir dir;
 
-	atomic64_t nr_item[PBLK_NR_ITEM_TYPES];
+	atomic_t nr_content_type[NR_PBLK_ITEM_TYPE];
 
 	struct list_head compl_list;
 
@@ -1315,9 +1323,16 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 								sector_t lba)
 {
 	struct ppa_addr ppa;
+	// struct timespec ts_start, ts_end, ts_run;
+
+	// getnstimeofday(&ts_start);
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		struct ppa_addr ppa = pblk_trans_l2p_map_get(pblk, lba);
+		// getnstimeofday(&ts_end);
+		// ts_run = timespec_sub(ts_end, ts_start);
+		// pblk->total_time += ts_run.tv_nsec;
+		// pblk->num_of_stamp++;
 		return ppa;
 	}
 #endif
@@ -1338,9 +1353,17 @@ static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,
 static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,
 						struct ppa_addr ppa)
 {
+	// struct timespec ts_start, ts_end, ts_run;
+
+	// getnstimeofday(&ts_start);
 #ifndef PBLK_DISABLE_D_FTL
 	if (pblk->dir.enable) {
 		pblk_trans_l2p_map_set(pblk, lba, ppa);
+		// getnstimeofday(&ts_end);
+		// ts_run = timespec_sub(ts_end, ts_start);
+
+		// pblk->total_time += ts_run.tv_nsec;
+		// pblk->num_of_stamp++;
 		return ;
 	}
 #endif

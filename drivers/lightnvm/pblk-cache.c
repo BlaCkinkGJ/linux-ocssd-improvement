@@ -63,6 +63,7 @@ retry:
 
 			item.type = bio->content_type;
 			item.lba = w_ctx.lba;
+			item.is_write = true;
 
 			pblk_trans_do_calc(pblk, item);
 #ifdef PBLK_CALC_THREAD_ENABLE

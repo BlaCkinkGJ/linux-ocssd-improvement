@@ -148,7 +148,7 @@ static int journal_submit_commit_record(journal_t *journal,
 	lock_buffer(bh);
 	clear_buffer_dirty(bh);
 	set_buffer_uptodate(bh);
-	bh->content_type = 1; /* 1 means that this is journal */
+	bh->content_type = PBLK_ITEM_TYPE_JOURNAL;
 	bh->b_end_io = journal_end_buffer_io_sync;
 
 	if (journal->j_flags & JBD2_BARRIER &&
@@ -699,7 +699,7 @@ start_journal_io:
 				/*
 				 * Compute checksum.
 				 */
-				bh->content_type = 1; /* this is journal */
+				bh->content_type = PBLK_ITEM_TYPE_JOURNAL;
 				if (jbd2_has_feature_checksum(journal)) {
 					crc32_sum =
 					    jbd2_checksum_data(crc32_sum, bh);

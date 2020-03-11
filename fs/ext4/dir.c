@@ -244,6 +244,7 @@ static int ext4_readdir(struct file *file, struct dir_context *ctx)
 						(sb->s_blocksize - 1)) + 1;
 				break;
 			}
+			bh->content_type = PBLK_ITEM_TYPE_DIR;
 			offset += ext4_rec_len_from_disk(de->rec_len,
 					sb->s_blocksize);
 			if (le32_to_cpu(de->inode)) {

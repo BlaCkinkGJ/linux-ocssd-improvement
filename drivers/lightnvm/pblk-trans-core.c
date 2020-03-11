@@ -146,10 +146,29 @@ int pblk_trans_init(struct pblk *pblk)
 	bool is_valid;
 	int ret;
 
+	dir->time_stamp = 0;
+	dir->bench = 0;
+
+	if (dir->time_stamp == 0 || dir->bench == 0) {
+		if (PBLK_TRANS_CACHE_SIZE > 16) {
+			dir->bench = PBLK_DEFAULT_BENCH_SIZE;
+		} else if (PBLK_TRANS_CACHE_SIZE > 3) {
+			dir->bench = 2;
+		} else {
+			dir->bench = 1;
+		} // end of if
+		dir->time_stamp = jiffies;
+	}
+
+	dir->prev_gap = -1;
+
 	dir->entry = vmalloc(dir->entry_num*dir_entry_size);
 	if (!dir->entry) {
 		return -ENOMEM;
 	}
+
+	atomic64_set(&dir->nr_read, 0);
+	atomic64_set(&dir->nr_write, 0);
 
 	dir->op = &trans_op;
 	pr_info("pblk-trans: directory initialization phase: OK\n");
@@ -432,8 +451,8 @@ void pblk_dir_sysfs_force(struct pblk *pblk, int force)
 		pblk_trans_init_ratio(&dir->entry[i].hit);
 		pblk_trans_init_ratio(&dir->entry[i].call);
 	}
-	pblk->total_time = 0;
-	pblk->num_of_stamp = 1;
+	// pblk->total_time = 0;
+	// pblk->num_of_stamp = 1;
 	pr_info("pblk-trans: directory forced clear\n");
 	spin_unlock(&cache->lock);
 }

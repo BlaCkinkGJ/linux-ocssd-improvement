@@ -1,0 +1,912 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ADDR_POOL_SIZE	pblk-init.c	222;"	d	file:
+DEFAULT_BLOCK_SIZE	pblk.h	63;"	d
+DEVICE_MULTIPLY_VALUE	pblk.h	62;"	d
+EMETA_VERSION_MAJOR	pblk.h	367;"	d
+EMETA_VERSION_MINOR	pblk.h	368;"	d
+EMPTY_ENTRY	pblk.h	188;"	d
+GC_LIMIT_INVERSE	pblk.h	37;"	d
+GC_TIME_MSECS	pblk.h	38;"	d
+NR_PHY_IN_LOG	pblk.h	54;"	d
+PBLK_ACCEL_DEC_POINT	pblk.h	88;"	d
+PBLK_BLK_ST_CLOSED	pblk.h	/^	PBLK_BLK_ST_CLOSED =	0x2,$/;"	e	enum:__anon3
+PBLK_BLK_ST_OPEN	pblk.h	/^	PBLK_BLK_ST_OPEN =	0x1,$/;"	e	enum:__anon3
+PBLK_CACHE_NAME_LEN	pblk.h	47;"	d
+PBLK_COMMAND_TIMEOUT_MS	pblk.h	49;"	d
+PBLK_DATA_LINES	pblk.h	505;"	d
+PBLK_DEFAULT_OP	pblk.h	59;"	d
+PBLK_EMETA_TYPE_HEADER	pblk.h	/^	PBLK_EMETA_TYPE_HEADER = 1,	\/* struct line_emeta first sector *\/$/;"	e	enum:__anon7
+PBLK_EMETA_TYPE_LLBA	pblk.h	/^	PBLK_EMETA_TYPE_LLBA = 2,	\/* lba list - type: __le64 *\/$/;"	e	enum:__anon7
+PBLK_EMETA_TYPE_VSC	pblk.h	/^	PBLK_EMETA_TYPE_VSC = 3,	\/* vsc list - type: __le32 *\/$/;"	e	enum:__anon7
+PBLK_ERASE	pblk.h	/^	PBLK_ERASE,$/;"	e	enum:__anon1
+PBLK_EXPOSED_PAGE_SIZE	pblk.h	41;"	d
+PBLK_FLUSH_ENTRY	pblk.h	/^	PBLK_FLUSH_ENTRY	= 1 << 2,$/;"	e	enum:__anon2
+PBLK_GC_L_QD	pblk.h	1004;"	d
+PBLK_GC_MAX_READERS	pblk.h	1002;"	d
+PBLK_GC_NR_LISTS	pblk.h	128;"	d
+PBLK_GC_RQ_QD	pblk.h	1003;"	d
+PBLK_GC_RSV_LINE	pblk.h	1005;"	d
+PBLK_GEN_WS_POOL_SIZE	pblk.h	57;"	d
+PBLK_H_	pblk.h	21;"	d
+PBLK_IOTYPE_GC	pblk.h	/^	PBLK_IOTYPE_GC		= 1 << 1,$/;"	e	enum:__anon2
+PBLK_IOTYPE_USER	pblk.h	/^	PBLK_IOTYPE_USER	= 1 << 0,$/;"	e	enum:__anon2
+PBLK_ITEM_TYPE_DATA	pblk.h	/^	PBLK_ITEM_TYPE_DATA = 0,$/;"	e	enum:__anon9
+PBLK_ITEM_TYPE_JOURNAL	pblk.h	/^	PBLK_ITEM_TYPE_JOURNAL = 1,$/;"	e	enum:__anon9
+PBLK_KMALLOC_META	pblk.h	/^	PBLK_KMALLOC_META = 1,$/;"	e	enum:__anon6
+PBLK_L2P_READ	pblk.h	/^	PBLK_L2P_READ = 0,$/;"	e	enum:__anon10
+PBLK_L2P_WRITE	pblk.h	/^	PBLK_L2P_WRITE = 1,$/;"	e	enum:__anon10
+PBLK_LINEGC_EMPTY	pblk.h	/^	PBLK_LINEGC_EMPTY = 21,$/;"	e	enum:__anon5
+PBLK_LINEGC_FULL	pblk.h	/^	PBLK_LINEGC_FULL = 25,$/;"	e	enum:__anon5
+PBLK_LINEGC_HIGH	pblk.h	/^	PBLK_LINEGC_HIGH = 24,$/;"	e	enum:__anon5
+PBLK_LINEGC_LOW	pblk.h	/^	PBLK_LINEGC_LOW = 22,$/;"	e	enum:__anon5
+PBLK_LINEGC_MID	pblk.h	/^	PBLK_LINEGC_MID = 23,$/;"	e	enum:__anon5
+PBLK_LINEGC_NONE	pblk.h	/^	PBLK_LINEGC_NONE = 20,$/;"	e	enum:__anon5
+PBLK_LINESTATE_BAD	pblk.h	/^	PBLK_LINESTATE_BAD = 14,$/;"	e	enum:__anon5
+PBLK_LINESTATE_CLOSED	pblk.h	/^	PBLK_LINESTATE_CLOSED = 12,$/;"	e	enum:__anon5
+PBLK_LINESTATE_CORRUPT	pblk.h	/^	PBLK_LINESTATE_CORRUPT = 15,$/;"	e	enum:__anon5
+PBLK_LINESTATE_FREE	pblk.h	/^	PBLK_LINESTATE_FREE = 10,$/;"	e	enum:__anon5
+PBLK_LINESTATE_GC	pblk.h	/^	PBLK_LINESTATE_GC = 13,$/;"	e	enum:__anon5
+PBLK_LINESTATE_NEW	pblk.h	/^	PBLK_LINESTATE_NEW = 9,$/;"	e	enum:__anon5
+PBLK_LINESTATE_OPEN	pblk.h	/^	PBLK_LINESTATE_OPEN = 11,$/;"	e	enum:__anon5
+PBLK_LINETYPE_DATA	pblk.h	/^	PBLK_LINETYPE_DATA = 2,$/;"	e	enum:__anon5
+PBLK_LINETYPE_FREE	pblk.h	/^	PBLK_LINETYPE_FREE = 0,$/;"	e	enum:__anon5
+PBLK_LINETYPE_LOG	pblk.h	/^	PBLK_LINETYPE_LOG = 1,$/;"	e	enum:__anon5
+PBLK_LINETYPE_TRANS	pblk.h	/^	PBLK_LINETYPE_TRANS = 4,$/;"	e	enum:__anon5
+PBLK_LINE_EMPTY	pblk.h	329;"	d
+PBLK_MAGIC	pblk.h	356;"	d
+PBLK_MAX_LUNS_BITMAP	pblk.h	52;"	d
+PBLK_MAX_REQ_ADDRS	pblk.h	42;"	d
+PBLK_MAX_REQ_ADDRS_PW	pblk.h	43;"	d
+PBLK_NR_CLOSE_JOBS	pblk.h	45;"	d
+PBLK_READ	pblk.h	/^	PBLK_READ		= READ,$/;"	e	enum:__anon1
+PBLK_READ_RANDOM	pblk.h	/^	PBLK_READ_RANDOM	= 0,$/;"	e	enum:__anon11
+PBLK_READ_RECOV	pblk.h	/^	PBLK_READ_RECOV,		\/* Recovery read - errors allowed *\/$/;"	e	enum:__anon1
+PBLK_READ_SEQUENTIAL	pblk.h	/^	PBLK_READ_SEQUENTIAL	= 1,$/;"	e	enum:__anon11
+PBLK_RECOVERY_SECTORS	pblk.h	236;"	d
+PBLK_RL_HIGH	pblk.h	/^	PBLK_RL_HIGH = 1,$/;"	e	enum:__anon4
+PBLK_RL_LOW	pblk.h	/^	PBLK_RL_LOW = 3,$/;"	e	enum:__anon4
+PBLK_RL_MID	pblk.h	/^	PBLK_RL_MID = 2,$/;"	e	enum:__anon4
+PBLK_SECTOR	pblk.h	40;"	d
+PBLK_STATE_RECOVERING	pblk.h	/^	PBLK_STATE_RECOVERING = 2,$/;"	e	enum:__anon8
+PBLK_STATE_RUNNING	pblk.h	/^	PBLK_STATE_RUNNING = 0,$/;"	e	enum:__anon8
+PBLK_STATE_STOPPED	pblk.h	/^	PBLK_STATE_STOPPED = 3,$/;"	e	enum:__anon8
+PBLK_STATE_STOPPING	pblk.h	/^	PBLK_STATE_STOPPING = 1,$/;"	e	enum:__anon8
+PBLK_SUBMITTED_ENTRY	pblk.h	/^	PBLK_SUBMITTED_ENTRY	= 1 << 4,$/;"	e	enum:__anon2
+PBLK_TRANS_BLOCK_SIZE	pblk.h	83;"	d
+PBLK_TRANS_CACHE_SIZE	pblk.h	84;"	d
+PBLK_TRANS_EVICT_MSECS	pblk.h	93;"	d
+PBLK_TRANS_SHIFT_SIZE	pblk.h	86;"	d
+PBLK_USER_HIGH_THRS	pblk.h	293;"	d
+PBLK_USER_LOW_THRS	pblk.h	294;"	d
+PBLK_VMALLOC_META	pblk.h	/^	PBLK_VMALLOC_META = 2,$/;"	e	enum:__anon6
+PBLK_WRITABLE_ENTRY	pblk.h	/^	PBLK_WRITABLE_ENTRY	= 1 << 5,$/;"	e	enum:__anon2
+PBLK_WRITE	pblk.h	/^	PBLK_WRITE		= WRITE,\/* Write from write buffer *\/$/;"	e	enum:__anon1
+PBLK_WRITE_INT	pblk.h	/^	PBLK_WRITE_INT,			\/* Internal write - no write buffer *\/$/;"	e	enum:__anon1
+PBLK_WRITTEN_DATA	pblk.h	/^	PBLK_WRITTEN_DATA	= 1 << 3,$/;"	e	enum:__anon2
+SMETA_VERSION_MAJOR	pblk.h	364;"	d
+SMETA_VERSION_MINOR	pblk.h	365;"	d
+TRANS_QUEUE_SIZE	pblk.h	91;"	d
+TRANS_UPDATE_MSECS	pblk.h	90;"	d
+USER_DEFINED_BLOCK_SIZE	pblk.h	65;"	d
+__nvm_config_extended	core.c	/^static int __nvm_config_extended(struct nvm_dev *dev,$/;"	f	file:
+__nvm_config_simple	core.c	/^static int __nvm_config_simple(struct nvm_dev *dev,$/;"	f	file:
+__nvm_configure_create	core.c	/^static int __nvm_configure_create(struct nvm_ioctl_create *create)$/;"	f	file:
+__nvm_find_target_type	core.c	/^static struct nvm_tgt_type *__nvm_find_target_type(const char *name)$/;"	f	file:
+__nvm_remove_target	core.c	/^static void __nvm_remove_target(struct nvm_target *t)$/;"	f	file:
+__ocssd_l2p_invalidate	pblk-trans-io.c	/^static void __ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_line *line, u64 paddr)$/;"	f	file:
+__pblk_alloc_page	pblk-core.c	/^u64 __pblk_alloc_page(struct pblk *pblk, struct pblk_line *line, int nr_secs)$/;"	f
+__pblk_down_page	pblk-core.c	/^static void __pblk_down_page(struct pblk *pblk, struct ppa_addr *ppa_list,$/;"	f	file:
+__pblk_end_io_erase	pblk-core.c	/^static void __pblk_end_io_erase(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f	file:
+__pblk_end_io_read	pblk-read.c	/^static void __pblk_end_io_read(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+__pblk_line_put	pblk-core.c	/^static void __pblk_line_put(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+__pblk_map_invalidate	pblk-core.c	/^void __pblk_map_invalidate(struct pblk *pblk, struct pblk_line *line,$/;"	f
+__pblk_rb_may_write	pblk-rb.c	/^static int __pblk_rb_may_write(struct pblk_rb *rb, unsigned int nr_entries,$/;"	f	file:
+__pblk_rb_update_l2p	pblk-rb.c	/^static int __pblk_rb_update_l2p(struct pblk_rb *rb, unsigned int to_update)$/;"	f	file:
+__pblk_rb_write_entry	pblk-rb.c	/^static void __pblk_rb_write_entry(struct pblk_rb *rb, void *data,$/;"	f	file:
+__pblk_rl_update_rates	pblk-rl.c	/^static void __pblk_rl_update_rates(struct pblk_rl *rl,$/;"	f	file:
+__pblk_trans_evict_run	pblk-trans-evict.c	/^static int __pblk_trans_evict_run(struct pblk *pblk)$/;"	f	file:
+_ctl_fops	core.c	/^static const struct file_operations _ctl_fops = {$/;"	v	typeref:struct:file_operations	file:
+_nvm_misc	core.c	/^builtin_misc_device(_nvm_misc);$/;"	v
+_nvm_misc	core.c	/^static struct miscdevice _nvm_misc = {$/;"	v	typeref:struct:miscdevice	file:
+addr_to_gen_ppa	pblk.h	/^static inline struct ppa_addr addr_to_gen_ppa(struct pblk *pblk, u64 paddr,$/;"	f
+addrf	pblk.h	/^	struct nvm_addrf addrf;		\/* Aligned address format *\/$/;"	m	struct:pblk	typeref:struct:pblk::nvm_addrf
+addrf_len	pblk.h	/^	int addrf_len;$/;"	m	struct:pblk
+bad_list	pblk.h	/^	struct list_head bad_list;	\/* Full lines bad *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+bb_aux	pblk.h	/^	unsigned long *bb_aux;$/;"	m	struct:pblk_line_mgmt
+bb_bitmap	pblk.h	/^	__le64 bb_bitmap[];     \/* Updated bad block bitmap for line *\/$/;"	m	struct:line_emeta
+bb_template	pblk.h	/^	unsigned long *bb_template;$/;"	m	struct:pblk_line_mgmt
+bb_wq	pblk.h	/^	struct workqueue_struct *bb_wq;$/;"	m	struct:pblk	typeref:struct:pblk::workqueue_struct
+bios	pblk.h	/^	struct bio_list bios;		\/* Original bios - used for completion$/;"	m	struct:pblk_w_ctx	typeref:struct:pblk_w_ctx::bio_list
+bit_idx	pblk.h	/^	atomic_t bit_idx;$/;"	m	struct:pblk_trans_entry
+blk_bitmap	pblk.h	/^	unsigned long *blk_bitmap;	\/* Bitmap for valid\/invalid blocks *\/$/;"	m	struct:pblk_line
+blk_bitmap_len	pblk.h	/^	unsigned int blk_bitmap_len;	\/* Length for block bitmap in line *\/$/;"	m	struct:pblk_line_meta
+blk_in_line	pblk.h	/^	atomic_t blk_in_line;		\/* Number of good blocks in line *\/$/;"	m	struct:pblk_line
+blk_per_line	pblk.h	/^	unsigned int blk_per_line;	\/* Number of blocks in a full line *\/$/;"	m	struct:pblk_line_meta
+bppa	pblk.h	/^	struct ppa_addr bppa;$/;"	m	struct:pblk_lun	typeref:struct:pblk_lun::ppa_addr
+bucket	pblk.h	/^	unsigned char *bucket;           \/* it is a kind of write buffer *\/$/;"	m	struct:pblk_trans_cache
+bucket_percentage	pblk-sysfs.c	/^static long long bucket_percentage(unsigned long long bucket,$/;"	f	file:
+bucket_sec	pblk.h	/^	size_t bucket_sec;               \/* cache bucket sectors *\/$/;"	m	struct:pblk_trans_cache
+buf	pblk.h	/^	struct line_emeta *buf;		\/* emeta buffer in media format *\/$/;"	m	struct:pblk_emeta	typeref:struct:pblk_emeta::line_emeta
+buf	pblk.h	/^	struct line_smeta *buf;		\/* smeta buffer in persistent format *\/$/;"	m	struct:pblk_smeta	typeref:struct:pblk_smeta::line_smeta
+cache	pblk.h	/^	struct pblk_trans_cache cache;$/;"	m	struct:pblk	typeref:struct:pblk::pblk_trans_cache
+cache_ptr	pblk.h	/^	unsigned char *cache_ptr;   \/* start location of cache *\/$/;"	m	struct:pblk_trans_entry
+cache_reads	pblk.h	/^	atomic_long_t cache_reads;	\/* Read requests that hit the cache *\/$/;"	m	struct:pblk
+cacheline	pblk.h	/^	struct ppa_addr cacheline;	\/* Cacheline for this entry *\/$/;"	m	struct:pblk_rb_entry	typeref:struct:pblk_rb_entry::ppa_addr
+calc_emeta_len	pblk-init.c	/^static unsigned int calc_emeta_len(struct pblk *pblk)$/;"	f	file:
+call	pblk.h	/^	struct pblk_trans_ratio call;$/;"	m	struct:pblk_trans_entry	typeref:struct:pblk_trans_entry::pblk_trans_ratio
+capacity	pblk.h	/^	sector_t capacity; \/* Device capacity when bad blocks are subtracted *\/$/;"	m	struct:pblk
+ch_off	core.c	/^	int ch_off;$/;"	m	struct:nvm_ch_map	file:
+ch_stripe	pblk.h	/^	int ch_stripe;$/;"	m	struct:pblk_addrf
+chks	pblk.h	/^	struct nvm_chk_meta *chks;	\/* Chunks forming line *\/$/;"	m	struct:pblk_line	typeref:struct:pblk_line::nvm_chk_meta
+chnls	core.c	/^	struct nvm_ch_map *chnls;$/;"	m	struct:nvm_dev_map	typeref:struct:nvm_dev_map::nvm_ch_map	file:
+clean_wctx	pblk-rb.c	/^static void clean_wctx(struct pblk_w_ctx *w_ctx)$/;"	f	file:
+close_lock	pblk.h	/^	spinlock_t close_lock;$/;"	m	struct:pblk_line_mgmt
+close_wq	pblk.h	/^	struct workqueue_struct *close_wq;$/;"	m	struct:pblk	typeref:struct:pblk::workqueue_struct
+compl_list	pblk.h	/^	struct list_head compl_list;$/;"	m	struct:pblk	typeref:struct:pblk::list_head
+corrupt_list	pblk.h	/^	struct list_head corrupt_list;	\/* Full lines corrupted *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+crc	pblk.h	/^	__le32 crc;		\/* Full structure including struct crc *\/$/;"	m	struct:line_emeta
+crc	pblk.h	/^	__le32 crc;		\/* Full structure including struct crc *\/$/;"	m	struct:line_smeta
+crc	pblk.h	/^	__le32 crc;$/;"	m	struct:line_header
+cur_sec	pblk.h	/^	unsigned int cur_sec;		\/* Sector map pointer *\/$/;"	m	struct:pblk_line
+d_seq_nr	pblk.h	/^	unsigned long d_seq_nr;		\/* Data line unique sequence number *\/$/;"	m	struct:pblk_line_mgmt
+data	pblk-recovery.c	/^	void *data;$/;"	m	struct:pblk_recov_alloc	file:
+data	pblk.h	/^	void *data;			\/* Pointer to data on this entry *\/$/;"	m	struct:pblk_rb_entry
+data	pblk.h	/^	void *data;$/;"	m	struct:pblk_gc_rq
+data_line	pblk.h	/^	struct pblk_line *data_line;	\/* Current data line *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_line
+data_next	pblk.h	/^	struct pblk_line *data_next;	\/* Next data line *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_line
+dev	pblk.h	/^	struct nvm_tgt_dev *dev;$/;"	m	struct:pblk	typeref:struct:pblk::nvm_tgt_dev
+dir	pblk.h	/^	struct pblk_trans_dir dir;$/;"	m	struct:pblk	typeref:struct:pblk::pblk_trans_dir
+disk	pblk.h	/^	struct gendisk *disk;$/;"	m	struct:pblk	typeref:struct:pblk::gendisk
+dma_meta_list	pblk-recovery.c	/^	dma_addr_t dma_meta_list;$/;"	m	struct:pblk_recov_alloc	file:
+dma_ppa_list	pblk-recovery.c	/^	dma_addr_t dma_ppa_list;$/;"	m	struct:pblk_recov_alloc	file:
+dsec_per_line	pblk.h	/^	unsigned int dsec_per_line;	\/* Number of data sectors in a line *\/$/;"	m	struct:pblk_line_meta
+e_rq_pool	pblk.h	/^	mempool_t *e_rq_pool;$/;"	m	struct:pblk
+eline_meta	pblk.h	/^	struct pblk_emeta *eline_meta[PBLK_DATA_LINES];$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_emeta
+emeta	pblk.h	/^	struct pblk_emeta *emeta;	\/* End medatada *\/$/;"	m	struct:pblk_line	typeref:struct:pblk_line::pblk_emeta
+emeta_alloc_type	pblk.h	/^	int emeta_alloc_type;$/;"	m	struct:pblk_line_mgmt
+emeta_bb	pblk.h	/^	unsigned int emeta_bb;		\/* Boundary for bb that affects emeta *\/$/;"	m	struct:pblk_line_meta
+emeta_len	pblk.h	/^	unsigned int emeta_len[4];	\/* Lengths for emeta:$/;"	m	struct:pblk_line_meta
+emeta_list	pblk.h	/^	struct list_head emeta_list;	\/* Lines queued to schedule emeta *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+emeta_sec	pblk.h	/^	unsigned int emeta_sec[4];	\/* Sectors needed for emeta. Same layout$/;"	m	struct:pblk_line_meta
+emeta_ssec	pblk.h	/^	u64 emeta_ssec;			\/* Sector where emeta starts *\/$/;"	m	struct:pblk_line
+emeta_to_bb	pblk.h	/^static inline void *emeta_to_bb(struct line_emeta *emeta)$/;"	f
+emeta_to_lbas	pblk.h	/^static inline void *emeta_to_lbas(struct pblk *pblk, struct line_emeta *emeta)$/;"	f
+emeta_to_vsc	pblk.h	/^static inline void *emeta_to_vsc(struct pblk *pblk, struct line_emeta *emeta)$/;"	f
+emeta_to_wa	pblk.h	/^static inline void *emeta_to_wa(struct pblk_line_meta *lm,$/;"	f
+enable	pblk.h	/^	int enable;						\/* initial recovery successful then this is true *\/$/;"	m	struct:pblk_trans_dir
+entries	pblk.h	/^	struct pblk_rb_entry *entries;	\/* Ring buffer entries *\/$/;"	m	struct:pblk_rb	typeref:struct:pblk_rb::pblk_rb_entry
+entry	pblk.h	/^	struct pblk_trans_entry *entry; \/* this contains entries *\/$/;"	m	struct:pblk_trans_dir	typeref:struct:pblk_trans_dir::pblk_trans_entry
+entry_num	pblk.h	/^	size_t entry_num;               \/* number of entry in this directory *\/$/;"	m	struct:pblk_trans_dir
+erase	pblk.h	/^	int (*erase) (struct pblk *, struct pblk_trans_entry *);$/;"	m	struct:pblk_trans_op
+erase_bitmap	pblk.h	/^	unsigned long *erase_bitmap;	\/* Bitmap for erased blocks *\/$/;"	m	struct:pblk_line
+erase_failed	pblk.h	/^	atomic_long_t erase_failed;$/;"	m	struct:pblk
+failed	pblk.h	/^	struct list_head failed;$/;"	m	struct:pblk_rec_ctx	typeref:struct:pblk_rec_ctx::list_head
+fifo	pblk.h	/^	struct kfifo fifo;              \/* manage to incoming data line write request *\/$/;"	m	struct:pblk_trans_dir	typeref:struct:pblk_trans_dir::kfifo
+flags	pblk.h	/^	int flags;			\/* Write context flags *\/$/;"	m	struct:pblk_w_ctx
+flush_point	pblk.h	/^	unsigned int flush_point;	\/* Sync point - last entry that must be$/;"	m	struct:pblk_rb
+free_bitmap	pblk.h	/^	unsigned long *free_bitmap;      \/* this contains location of free blocks in cache *\/$/;"	m	struct:pblk_trans_cache
+free_blocks	pblk.h	/^	atomic_t free_blocks;		\/* Total number of free blocks (+ OP) *\/$/;"	m	struct:pblk_rl
+free_list	pblk.h	/^	struct list_head free_list;	\/* Full lines ready to use *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+free_lock	pblk.h	/^	spinlock_t free_lock;$/;"	m	struct:pblk_line_mgmt
+free_user_blocks	pblk.h	/^	atomic_t free_user_blocks;	\/* Number of user free blocks (no OP) *\/$/;"	m	struct:pblk_rl
+gc	pblk.h	/^	__le64 gc;		\/* Number of sectors written by GC*\/$/;"	m	struct:wa_counters
+gc	pblk.h	/^	struct pblk_gc gc;$/;"	m	struct:pblk	typeref:struct:pblk::pblk_gc
+gc_active	pblk.h	/^	int gc_active;$/;"	m	struct:pblk_gc
+gc_empty_list	pblk.h	/^	struct list_head gc_empty_list;	\/* Full lines close, all valid *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+gc_enabled	pblk.h	/^	int gc_enabled;$/;"	m	struct:pblk_gc
+gc_forced	pblk.h	/^	int gc_forced;$/;"	m	struct:pblk_gc
+gc_full_list	pblk.h	/^	struct list_head gc_full_list;	\/* Full lines ready to GC, no valid *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+gc_group	pblk.h	/^	int gc_group;			\/* PBLK_LINEGC_X *\/$/;"	m	struct:pblk_line
+gc_high_list	pblk.h	/^	struct list_head gc_high_list;	\/* Full lines ready to GC, high isc *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+gc_line_reader_wq	pblk.h	/^	struct workqueue_struct *gc_line_reader_wq;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::workqueue_struct
+gc_lists	pblk.h	/^	struct list_head *gc_lists[PBLK_GC_NR_LISTS];$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+gc_lock	pblk.h	/^	spinlock_t gc_lock;$/;"	m	struct:pblk_line_mgmt
+gc_low_list	pblk.h	/^	struct list_head gc_low_list;	\/* Full lines ready to GC, low isc *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+gc_mid_list	pblk.h	/^	struct list_head gc_mid_list;	\/* Full lines ready to GC, mid isc *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+gc_reader_ts	pblk.h	/^	struct task_struct *gc_reader_ts;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::task_struct
+gc_reader_wq	pblk.h	/^	struct workqueue_struct *gc_reader_wq;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::workqueue_struct
+gc_rst_wa	pblk.h	/^	u64 gc_rst_wa;$/;"	m	struct:pblk
+gc_sem	pblk.h	/^	struct semaphore gc_sem;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::semaphore
+gc_timer	pblk.h	/^	struct timer_list gc_timer;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::timer_list
+gc_trans_run	pblk.h	/^	int gc_trans_run;$/;"	m	struct:pblk_gc
+gc_ts	pblk.h	/^	struct task_struct *gc_ts;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::task_struct
+gc_wa	pblk.h	/^	atomic64_t gc_wa;		\/* Sectors written by GC *\/$/;"	m	struct:pblk
+gc_writer_ts	pblk.h	/^	struct task_struct *gc_writer_ts;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::task_struct
+gcc-version.sh_gcc	.cache.mk	/^__cached_\/bin\/bash_.\/scripts\/gcc-version.sh_gcc := 0704$/;"	m
+gen_ws_pool	pblk.h	/^	mempool_t *gen_ws_pool;$/;"	m	struct:pblk
+header	pblk.h	/^	struct line_header header;$/;"	m	struct:line_emeta	typeref:struct:line_emeta::line_header
+header	pblk.h	/^	struct line_header header;$/;"	m	struct:line_smeta	typeref:struct:line_smeta::line_header
+high	pblk.h	/^	unsigned int high;	\/* Upper threshold for rate limiter (free run -$/;"	m	struct:pblk_rl
+high_pw	pblk.h	/^	unsigned int high_pw;	\/* High rounded up as a power of 2 *\/$/;"	m	struct:pblk_rl
+high_thrs	pblk.h	/^	unsigned int high_thrs;		\/* Threshold for GC high list *\/$/;"	m	struct:pblk_line_meta
+hit	pblk.h	/^	struct pblk_trans_ratio hit;$/;"	m	struct:pblk_trans_entry	typeref:struct:pblk_trans_entry::pblk_trans_ratio
+hot_ratio	pblk.h	/^	atomic_t hot_ratio;$/;"	m	struct:pblk_trans_entry
+id	pblk.h	/^	__le32 id;		\/* line id for current line *\/$/;"	m	struct:line_header
+id	pblk.h	/^	int id;                     \/* id of this entry *\/$/;"	m	struct:pblk_trans_entry
+id	pblk.h	/^	unsigned int id;		\/* Line number corresponds to the$/;"	m	struct:pblk_line
+identifier	pblk.h	/^	__le32 identifier;	\/* pblk identifier *\/$/;"	m	struct:line_header
+index	pblk.h	/^	struct list_head index;		\/* List head to enable indexes *\/$/;"	m	struct:pblk_rb_entry	typeref:struct:pblk_rb_entry::list_head
+inflight_flush_point	pblk.h	/^	atomic_t inflight_flush_point;	\/* Not served REQ_FLUSH | REQ_FUA *\/$/;"	m	struct:pblk_rb
+inflight_io	pblk.h	/^	atomic_t inflight_io;		\/* General inflight I\/O counter *\/$/;"	m	struct:pblk
+inflight_reads	pblk.h	/^	atomic_long_t inflight_reads;	\/* Inflight sector read requests *\/$/;"	m	struct:pblk
+inflight_writes	pblk.h	/^	atomic_long_t inflight_writes;	\/* Inflight writes (user and gc) *\/$/;"	m	struct:pblk
+instance_uuid	pblk.h	/^	unsigned char instance_uuid[16];$/;"	m	struct:pblk
+invalid_bitmap	pblk.h	/^	unsigned long *invalid_bitmap;	\/* Bitmap for invalid sectors in line *\/$/;"	m	struct:pblk_line
+is_change	pblk.h	/^	bool is_change;$/;"	m	struct:pblk_trans_entry
+kobj	pblk.h	/^	struct kobject kobj;$/;"	m	struct:pblk	typeref:struct:pblk::kobject
+l2p_update	pblk.h	/^	unsigned int l2p_update;	\/* l2p update point - next entry for$/;"	m	struct:pblk_rb
+l_mg	pblk.h	/^	struct pblk_line_mgmt l_mg;		\/* Line management *\/$/;"	m	struct:pblk	typeref:struct:pblk::pblk_line_mgmt
+l_seq_nr	pblk.h	/^	unsigned long l_seq_nr;		\/* Log line unique sequence number *\/$/;"	m	struct:pblk_line_mgmt
+lba	pblk.h	/^	__le64 lba;$/;"	m	struct:pblk_sec_meta
+lba	pblk.h	/^	sector_t lba;$/;"	m	struct:pblk_update_item
+lba	pblk.h	/^	u64 lba;			\/* Logic addr. associated with entry *\/$/;"	m	struct:pblk_w_ctx
+lba	pblk.h	/^	u64 lba;$/;"	m	struct:pblk_g_ctx
+lba_list	pblk.h	/^	u64 lba_list[PBLK_MAX_REQ_ADDRS];$/;"	m	struct:pblk_gc_rq
+left_eblks	pblk.h	/^	atomic_t left_eblks;		\/* Blocks left for erasing *\/$/;"	m	struct:pblk_line
+left_msecs	pblk.h	/^	int left_msecs;			\/* Sectors left for mapping *\/$/;"	m	struct:pblk_line
+left_seblks	pblk.h	/^	atomic_t left_seblks;		\/* Blocks left for sync erasing *\/$/;"	m	struct:pblk_line
+line	pblk.h	/^	struct pblk_line *line;$/;"	m	struct:pblk_gc_rq	typeref:struct:pblk_gc_rq::pblk_line
+line	pblk.h	/^	struct pblk_line *line;$/;"	m	struct:pblk_line_ws	typeref:struct:pblk_line_ws::pblk_line
+line	pblk.h	/^	struct pblk_line *line;$/;"	m	struct:pblk_trans_entry	typeref:struct:pblk_trans_entry::pblk_line
+line_emeta	pblk.h	/^struct line_emeta {$/;"	s
+line_header	pblk.h	/^struct line_header {$/;"	s
+line_smeta	pblk.h	/^struct line_smeta {$/;"	s
+lines	pblk.h	/^	struct pblk_line *lines;		\/* Line array *\/$/;"	m	struct:pblk	typeref:struct:pblk::pblk_line
+list	pblk.h	/^	struct list_head list;		\/* Free, GC lists *\/$/;"	m	struct:pblk_line	typeref:struct:pblk_line::list_head
+list	pblk.h	/^	struct list_head list;		\/* Head for out-of-order completion *\/$/;"	m	struct:pblk_c_ctx	typeref:struct:pblk_c_ctx::list_head
+list	pblk.h	/^	struct list_head list;$/;"	m	struct:pblk_gc_rq	typeref:struct:pblk_gc_rq::list_head
+list	pblk.h	/^	struct list_head list;$/;"	m	struct:pblk_rb_pages	typeref:struct:pblk_rb_pages::list_head
+lm	pblk.h	/^	struct pblk_line_meta lm;		\/* Line metadata *\/$/;"	m	struct:pblk	typeref:struct:pblk::pblk_line_meta
+lock	pblk.h	/^	spinlock_t lock;		\/* Necessary for invalid_bitmap only *\/$/;"	m	struct:pblk_line
+lock	pblk.h	/^	spinlock_t lock;$/;"	m	struct:pblk
+lock	pblk.h	/^	spinlock_t lock;$/;"	m	struct:pblk_gc
+lock	pblk.h	/^	spinlock_t lock;$/;"	m	struct:pblk_trans_cache
+log_line	pblk.h	/^	struct pblk_line *log_line;	\/* Current FTL log line *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_line
+log_next	pblk.h	/^	struct pblk_line *log_next;	\/* Next FTL log line *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_line
+lun_bitmap	pblk.h	/^	__le64 lun_bitmap[];$/;"	m	struct:line_smeta
+lun_bitmap	pblk.h	/^	unsigned long *lun_bitmap;	\/* Bitmap for LUNs mapped in line *\/$/;"	m	struct:pblk_line
+lun_bitmap	pblk.h	/^	unsigned long *lun_bitmap;	\/* Luns used on current request *\/$/;"	m	struct:pblk_c_ctx
+lun_bitmap_len	pblk.h	/^	unsigned int lun_bitmap_len;	\/* Length for lun bitmap in line *\/$/;"	m	struct:pblk_line_meta
+lun_offs	core.c	/^	int *lun_offs;$/;"	m	struct:nvm_ch_map	file:
+lun_stripe	pblk.h	/^	int lun_stripe;$/;"	m	struct:pblk_addrf
+luns	pblk.h	/^	struct pblk_lun *luns;$/;"	m	struct:pblk	typeref:struct:pblk::pblk_lun
+map_bitmap	pblk.h	/^	unsigned long *map_bitmap;	\/* Bitmap for mapped sectors in line *\/$/;"	m	struct:pblk_line
+map_bitmap	pblk.h	/^	unsigned long *map_bitmap;	\/* Bitmap for mapped sectors in line *\/$/;"	m	struct:pblk_trans_entry
+max_write_pgs	pblk.h	/^	int max_write_pgs; \/* Maximum amount of pages supported by controller *\/$/;"	m	struct:pblk
+mem	pblk.h	/^	int mem;			\/* Write offset - points to next$/;"	m	struct:pblk_emeta
+mem	pblk.h	/^	unsigned int mem;		\/* Write offset - points to next$/;"	m	struct:pblk_rb
+memory_l2p_read	pblk-trans-io.c	/^int memory_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)$/;"	f
+memory_l2p_write	pblk-trans-io.c	/^int memory_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)$/;"	f
+meta_bitmap	pblk.h	/^	unsigned long meta_bitmap;$/;"	m	struct:pblk_line_mgmt
+meta_distance	pblk.h	/^	int meta_distance;		\/* Distance between data and metadata *\/$/;"	m	struct:pblk_line
+meta_distance	pblk.h	/^	unsigned int meta_distance;	\/* Distance between data and metadata *\/$/;"	m	struct:pblk_line_meta
+meta_line	pblk.h	/^	int meta_line;			\/* Metadata line id *\/$/;"	m	struct:pblk_line
+meta_list	pblk-recovery.c	/^	struct pblk_sec_meta *meta_list;$/;"	m	struct:pblk_recov_alloc	typeref:struct:pblk_recov_alloc::pblk_sec_meta	file:
+mid_thrs	pblk.h	/^	unsigned int mid_thrs;		\/* Threshold for GC mid list *\/$/;"	m	struct:pblk_line_meta
+min_blk_line	pblk.h	/^	unsigned int min_blk_line;	\/* Min. number of good blocks in line *\/$/;"	m	struct:pblk_line_meta
+min_write_pgs	pblk.h	/^	int min_write_pgs; \/* Minimum amount of pages required by controller *\/$/;"	m	struct:pblk
+next_id	pblk.h	/^	__le32 next_id;		\/* Line id for next line *\/$/;"	m	struct:line_emeta
+nr_entries	pblk.h	/^	unsigned int nr_entries;	\/* Number of emeta entries *\/$/;"	m	struct:pblk_emeta
+nr_entries	pblk.h	/^	unsigned int nr_entries;	\/* Number of entries in write buffer -$/;"	m	struct:pblk_rb
+nr_flush	pblk.h	/^	atomic64_t nr_flush;		\/* Number of flush\/fua I\/O *\/$/;"	m	struct:pblk
+nr_flush_rst	pblk.h	/^	u64 nr_flush_rst;		\/* Flushes reset value for pad dist.*\/$/;"	m	struct:pblk
+nr_free_lines	pblk.h	/^	int nr_free_lines;		\/* Number of full lines in free list *\/$/;"	m	struct:pblk_line_mgmt
+nr_lbas	pblk.h	/^	__le64 nr_lbas;		\/* Number of lbas mapped in line *\/$/;"	m	struct:line_emeta
+nr_lines	pblk.h	/^	int nr_lines;			\/* Total number of full lines *\/$/;"	m	struct:pblk_line_mgmt
+nr_padded	pblk.h	/^	unsigned int nr_padded;$/;"	m	struct:pblk_c_ctx
+nr_secs	pblk.h	/^	int nr_secs;$/;"	m	struct:pblk_gc_rq
+nr_secs	pblk.h	/^	unsigned long long nr_secs;$/;"	m	struct:pblk_rl
+nr_valid	pblk.h	/^	unsigned int nr_valid;$/;"	m	struct:pblk_c_ctx
+nr_valid_lbas	pblk.h	/^	__le64 nr_valid_lbas;	\/* Number of valid lbas mapped in line *\/$/;"	m	struct:line_emeta
+nr_valid_lbas	pblk.h	/^	unsigned int nr_valid_lbas;	\/* Number of valid lbas in line *\/$/;"	m	struct:pblk_line
+num_ch	core.c	/^	int num_ch;$/;"	m	struct:nvm_dev_map	file:
+num_lun	core.c	/^	int num_lun;$/;"	m	struct:nvm_ch_map	file:
+num_of_stamp	pblk.h	/^	u64 num_of_stamp;$/;"	m	struct:pblk
+nvm_alloc_dev	core.c	/^EXPORT_SYMBOL(nvm_alloc_dev);$/;"	v
+nvm_alloc_dev	core.c	/^struct nvm_dev *nvm_alloc_dev(int node)$/;"	f
+nvm_bb_tbl_fold	core.c	/^EXPORT_SYMBOL(nvm_bb_tbl_fold);$/;"	v
+nvm_bb_tbl_fold	core.c	/^int nvm_bb_tbl_fold(struct nvm_dev *dev, u8 *blks, int nr_blks)$/;"	f
+nvm_ch_map	core.c	/^struct nvm_ch_map {$/;"	s	file:
+nvm_config_check_luns	core.c	/^static int nvm_config_check_luns(struct nvm_geo *geo, int lun_begin,$/;"	f	file:
+nvm_core_init	core.c	/^static int nvm_core_init(struct nvm_dev *dev)$/;"	f	file:
+nvm_create_tgt	core.c	/^static int nvm_create_tgt(struct nvm_dev *dev, struct nvm_ioctl_create *create)$/;"	f	file:
+nvm_create_tgt_dev	core.c	/^static struct nvm_tgt_dev *nvm_create_tgt_dev(struct nvm_dev *dev,$/;"	f	file:
+nvm_ctl_ioctl	core.c	/^static long nvm_ctl_ioctl(struct file *file, uint cmd, unsigned long arg)$/;"	f	file:
+nvm_dev_dma_alloc	core.c	/^EXPORT_SYMBOL(nvm_dev_dma_alloc);$/;"	v
+nvm_dev_dma_alloc	core.c	/^void *nvm_dev_dma_alloc(struct nvm_dev *dev, gfp_t mem_flags,$/;"	f
+nvm_dev_dma_free	core.c	/^EXPORT_SYMBOL(nvm_dev_dma_free);$/;"	v
+nvm_dev_dma_free	core.c	/^void nvm_dev_dma_free(struct nvm_dev *dev, void *addr, dma_addr_t dma_handler)$/;"	f
+nvm_dev_map	core.c	/^struct nvm_dev_map {$/;"	s	file:
+nvm_end_io	core.c	/^EXPORT_SYMBOL(nvm_end_io);$/;"	v
+nvm_end_io	core.c	/^void nvm_end_io(struct nvm_rq *rqd)$/;"	f
+nvm_find_nvm_dev	core.c	/^static struct nvm_dev *nvm_find_nvm_dev(const char *name)$/;"	f	file:
+nvm_find_target	core.c	/^static struct nvm_target *nvm_find_target(struct nvm_dev *dev, const char *name)$/;"	f	file:
+nvm_find_target_type	core.c	/^static struct nvm_tgt_type *nvm_find_target_type(const char *name)$/;"	f	file:
+nvm_fops	core.c	/^static const struct block_device_operations nvm_fops = {$/;"	v	typeref:struct:block_device_operations	file:
+nvm_free	core.c	/^static void nvm_free(struct nvm_dev *dev)$/;"	f	file:
+nvm_free_rqd_ppalist	core.c	/^static void nvm_free_rqd_ppalist(struct nvm_tgt_dev *tgt_dev,$/;"	f	file:
+nvm_get_chunk_meta	core.c	/^EXPORT_SYMBOL(nvm_get_chunk_meta);$/;"	v
+nvm_get_chunk_meta	core.c	/^int nvm_get_chunk_meta(struct nvm_tgt_dev *tgt_dev, struct nvm_chk_meta *meta,$/;"	f
+nvm_get_tgt_bb_tbl	core.c	/^EXPORT_SYMBOL(nvm_get_tgt_bb_tbl);$/;"	v
+nvm_get_tgt_bb_tbl	core.c	/^int nvm_get_tgt_bb_tbl(struct nvm_tgt_dev *tgt_dev, struct ppa_addr ppa,$/;"	f
+nvm_init	core.c	/^static int nvm_init(struct nvm_dev *dev)$/;"	f	file:
+nvm_ioctl_dev_create	core.c	/^static long nvm_ioctl_dev_create(struct file *file, void __user *arg)$/;"	f	file:
+nvm_ioctl_dev_factory	core.c	/^static long nvm_ioctl_dev_factory(struct file *file, void __user *arg)$/;"	f	file:
+nvm_ioctl_dev_init	core.c	/^static long nvm_ioctl_dev_init(struct file *file, void __user *arg)$/;"	f	file:
+nvm_ioctl_dev_remove	core.c	/^static long nvm_ioctl_dev_remove(struct file *file, void __user *arg)$/;"	f	file:
+nvm_ioctl_get_devices	core.c	/^static long nvm_ioctl_get_devices(struct file *file, void __user *arg)$/;"	f	file:
+nvm_ioctl_info	core.c	/^static long nvm_ioctl_info(struct file *file, void __user *arg)$/;"	f	file:
+nvm_map_to_dev	core.c	/^static void nvm_map_to_dev(struct nvm_tgt_dev *tgt_dev, struct ppa_addr *p)$/;"	f	file:
+nvm_map_to_tgt	core.c	/^static void nvm_map_to_tgt(struct nvm_tgt_dev *tgt_dev, struct ppa_addr *p)$/;"	f	file:
+nvm_ppa_dev_to_tgt	core.c	/^static void nvm_ppa_dev_to_tgt(struct nvm_tgt_dev *tgt_dev,$/;"	f	file:
+nvm_ppa_tgt_to_dev	core.c	/^static void nvm_ppa_tgt_to_dev(struct nvm_tgt_dev *tgt_dev,$/;"	f	file:
+nvm_register	core.c	/^EXPORT_SYMBOL(nvm_register);$/;"	v
+nvm_register	core.c	/^int nvm_register(struct nvm_dev *dev)$/;"	f
+nvm_register_map	core.c	/^static int nvm_register_map(struct nvm_dev *dev)$/;"	f	file:
+nvm_register_tgt_type	core.c	/^EXPORT_SYMBOL(nvm_register_tgt_type);$/;"	v
+nvm_register_tgt_type	core.c	/^int nvm_register_tgt_type(struct nvm_tgt_type *tt)$/;"	f
+nvm_release_luns_err	core.c	/^static void nvm_release_luns_err(struct nvm_dev *dev, int lun_begin,$/;"	f	file:
+nvm_remove_tgt	core.c	/^static int nvm_remove_tgt(struct nvm_dev *dev, struct nvm_ioctl_remove *remove)$/;"	f	file:
+nvm_remove_tgt_dev	core.c	/^static void nvm_remove_tgt_dev(struct nvm_tgt_dev *tgt_dev, int clear)$/;"	f	file:
+nvm_reserve_luns	core.c	/^static int nvm_reserve_luns(struct nvm_dev *dev, int lun_begin, int lun_end)$/;"	f	file:
+nvm_rq_dev_to_tgt	core.c	/^static void nvm_rq_dev_to_tgt(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd)$/;"	f	file:
+nvm_rq_from_c_ctx	pblk.h	/^static inline struct nvm_rq *nvm_rq_from_c_ctx(void *c_ctx)$/;"	f
+nvm_rq_tgt_to_dev	core.c	/^static void nvm_rq_tgt_to_dev(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd)$/;"	f	file:
+nvm_set_rqd_ppalist	core.c	/^static int nvm_set_rqd_ppalist(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd,$/;"	f	file:
+nvm_set_tgt_bb_tbl	core.c	/^EXPORT_SYMBOL(nvm_set_tgt_bb_tbl);$/;"	v
+nvm_set_tgt_bb_tbl	core.c	/^int nvm_set_tgt_bb_tbl(struct nvm_tgt_dev *tgt_dev, struct ppa_addr *ppas,$/;"	f
+nvm_submit_io	core.c	/^EXPORT_SYMBOL(nvm_submit_io);$/;"	v
+nvm_submit_io	core.c	/^int nvm_submit_io(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd)$/;"	f
+nvm_submit_io_sync	core.c	/^EXPORT_SYMBOL(nvm_submit_io_sync);$/;"	v
+nvm_submit_io_sync	core.c	/^int nvm_submit_io_sync(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd)$/;"	f
+nvm_target_exists	core.c	/^static bool nvm_target_exists(const char *name)$/;"	f	file:
+nvm_unregister	core.c	/^EXPORT_SYMBOL(nvm_unregister);$/;"	v
+nvm_unregister	core.c	/^void nvm_unregister(struct nvm_dev *dev)$/;"	f
+nvm_unregister_map	core.c	/^static void nvm_unregister_map(struct nvm_dev *dev)$/;"	f	file:
+nvm_unregister_tgt_type	core.c	/^EXPORT_SYMBOL(nvm_unregister_tgt_type);$/;"	v
+nvm_unregister_tgt_type	core.c	/^void nvm_unregister_tgt_type(struct nvm_tgt_type *tt)$/;"	f
+ocssd_l2p_add_to_gc	pblk-trans-io.c	/^static void ocssd_l2p_add_to_gc(struct pblk *pblk, struct pblk_line *line) $/;"	f	file:
+ocssd_l2p_invalidate	pblk-trans-io.c	/^static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entry, u64 paddr)$/;"	f	file:
+ocssd_l2p_read	pblk-trans-io.c	/^int ocssd_l2p_read(struct pblk *pblk, struct pblk_trans_entry *entry)$/;"	f
+ocssd_l2p_write	pblk-trans-io.c	/^int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)$/;"	f
+op	pblk.h	/^	int op;      \/* Percentage of device used for over-provisioning *\/$/;"	m	struct:pblk
+op	pblk.h	/^	struct pblk_trans_op *op;       \/* directory operation is mapped in this place *\/$/;"	m	struct:pblk_trans_dir	typeref:struct:pblk_trans_dir::pblk_trans_op
+op_blks	pblk.h	/^	int op_blks; \/* Number of blocks used for over-provisioning *\/$/;"	m	struct:pblk
+order	pblk.h	/^	int order;$/;"	m	struct:pblk_rb_pages
+pad	pblk.h	/^	__le64 pad;		\/* Number of padded sectors *\/$/;"	m	struct:wa_counters
+pad_dist	pblk.h	/^	atomic64_t *pad_dist;		\/* Padding distribution buckets *\/$/;"	m	struct:pblk
+pad_rst_wa	pblk.h	/^	u64 pad_rst_wa;$/;"	m	struct:pblk
+pad_wa	pblk.h	/^	atomic64_t pad_wa;		\/* Padded sectors written *\/$/;"	m	struct:pblk
+padded_wb	pblk.h	/^	atomic_long_t padded_wb;	\/* Sectors padded in write buffer *\/$/;"	m	struct:pblk
+padded_writes	pblk.h	/^	atomic_long_t padded_writes;	\/* Sectors padded due to flush\/fua *\/$/;"	m	struct:pblk
+paddr	pblk.h	/^	u64 paddr;$/;"	m	struct:pblk_trans_entry
+paddr_list	pblk.h	/^	u64 paddr_list[PBLK_MAX_REQ_ADDRS];$/;"	m	struct:pblk_gc_rq
+page_bio_pool	pblk.h	/^	mempool_t *page_bio_pool;$/;"	m	struct:pblk
+pages	pblk.h	/^	struct list_head pages;		\/* List of data pages *\/$/;"	m	struct:pblk_rb	typeref:struct:pblk_rb::list_head
+pages	pblk.h	/^	struct page *pages;$/;"	m	struct:pblk_rb_pages	typeref:struct:pblk_rb_pages::page
+pblk	pblk.h	/^	struct pblk *pblk;$/;"	m	struct:pblk_line	typeref:struct:pblk_line::pblk
+pblk	pblk.h	/^	struct pblk *pblk;$/;"	m	struct:pblk_line_ws	typeref:struct:pblk_line_ws::pblk
+pblk	pblk.h	/^	struct pblk *pblk;$/;"	m	struct:pblk_pad_rq	typeref:struct:pblk_pad_rq::pblk
+pblk	pblk.h	/^	struct pblk *pblk;$/;"	m	struct:pblk_rec_ctx	typeref:struct:pblk_rec_ctx::pblk
+pblk	pblk.h	/^struct pblk {$/;"	s
+pblk-y	Makefile	/^pblk-y				:= pblk-init.o pblk-core.o pblk-rb.o \\$/;"	m
+pblk_addr_in_cache	pblk.h	/^static inline int pblk_addr_in_cache(struct ppa_addr ppa)$/;"	f
+pblk_addr_to_cacheline	pblk.h	/^static inline int pblk_addr_to_cacheline(struct ppa_addr ppa)$/;"	f
+pblk_addrf	pblk.h	/^struct pblk_addrf {$/;"	s
+pblk_alloc_line_meta	pblk-init.c	/^static int pblk_alloc_line_meta(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_alloc_page	pblk-core.c	/^u64 pblk_alloc_page(struct pblk *pblk, struct pblk_line *line, int nr_secs)$/;"	f
+pblk_alloc_rqd	pblk-core.c	/^struct nvm_rq *pblk_alloc_rqd(struct pblk *pblk, int type)$/;"	f
+pblk_alloc_w_rq	pblk-write.c	/^static int pblk_alloc_w_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_attrs	pblk-sysfs.c	/^static struct attribute *pblk_attrs[] = {$/;"	v	typeref:struct:attribute	file:
+pblk_bb_get_meta	pblk-init.c	/^static void *pblk_bb_get_meta(struct pblk *pblk)$/;"	f	file:
+pblk_bb_get_tbl	pblk-init.c	/^static int pblk_bb_get_tbl(struct nvm_tgt_dev *dev, struct pblk_lun *rlun,$/;"	f	file:
+pblk_bio_add_pages	pblk-core.c	/^int pblk_bio_add_pages(struct pblk *pblk, struct bio *bio, gfp_t flags,$/;"	f
+pblk_bio_free_pages	pblk-core.c	/^void pblk_bio_free_pages(struct pblk *pblk, struct bio *bio, int off,$/;"	f
+pblk_bio_map_addr	pblk-core.c	/^struct bio *pblk_bio_map_addr(struct pblk *pblk, void *data,$/;"	f
+pblk_bio_map_addr_endio	pblk-core.c	/^static void pblk_bio_map_addr_endio(struct bio *bio)$/;"	f	file:
+pblk_bio_set	pblk-init.c	/^struct bio_set *pblk_bio_set;$/;"	v	typeref:struct:bio_set
+pblk_blk_erase_async	pblk-core.c	/^int pblk_blk_erase_async(struct pblk *pblk, struct ppa_addr ppa)$/;"	f
+pblk_blk_erase_sync	pblk-core.c	/^static int pblk_blk_erase_sync(struct pblk *pblk, struct ppa_addr ppa)$/;"	f	file:
+pblk_boundary_paddr_checks	pblk.h	/^static inline int pblk_boundary_paddr_checks(struct pblk *pblk, u64 paddr)$/;"	f
+pblk_boundary_ppa_checks	pblk.h	/^static inline int pblk_boundary_ppa_checks(struct nvm_tgt_dev *tgt_dev,$/;"	f
+pblk_c_ctx	pblk.h	/^struct pblk_c_ctx {$/;"	s
+pblk_cacheline_to_addr	pblk.h	/^static inline struct ppa_addr pblk_cacheline_to_addr(int addr)$/;"	f
+pblk_calc_emeta_crc	pblk.h	/^static inline u32 pblk_calc_emeta_crc(struct pblk *pblk,$/;"	f
+pblk_calc_meta_header_crc	pblk.h	/^static inline u32 pblk_calc_meta_header_crc(struct pblk *pblk,$/;"	f
+pblk_calc_sec_in_line	pblk-recovery.c	/^static int pblk_calc_sec_in_line(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_calc_secs	pblk-core.c	/^int pblk_calc_secs(struct pblk *pblk, unsigned long secs_avail,$/;"	f
+pblk_calc_secs_to_sync	pblk-write.c	/^static int pblk_calc_secs_to_sync(struct pblk *pblk, unsigned int secs_avail,$/;"	f	file:
+pblk_calc_smeta_crc	pblk.h	/^static inline u32 pblk_calc_smeta_crc(struct pblk *pblk,$/;"	f
+pblk_capacity	pblk-init.c	/^static sector_t pblk_capacity(void *private)$/;"	f	file:
+pblk_check_io	pblk.h	/^static inline int pblk_check_io(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f
+pblk_chunk_get_info	pblk-core.c	/^struct nvm_chk_meta *pblk_chunk_get_info(struct pblk *pblk)$/;"	f
+pblk_chunk_get_meta	pblk-init.c	/^static void *pblk_chunk_get_meta(struct pblk *pblk)$/;"	f	file:
+pblk_chunk_get_off	pblk-core.c	/^struct nvm_chk_meta *pblk_chunk_get_off(struct pblk *pblk,$/;"	f
+pblk_complete_write	pblk-write.c	/^static void pblk_complete_write(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_core_free	pblk-init.c	/^static void pblk_core_free(struct pblk *pblk)$/;"	f	file:
+pblk_core_init	pblk-init.c	/^static int pblk_core_init(struct pblk *pblk)$/;"	f	file:
+pblk_dealloc_page	pblk-core.c	/^void pblk_dealloc_page(struct pblk *pblk, struct pblk_line *line, int nr_secs)$/;"	f
+pblk_dev_ppa_to_line_addr	pblk.h	/^static inline u64 pblk_dev_ppa_to_line_addr(struct pblk *pblk,$/;"	f
+pblk_dir_sysfs_force	pblk-trans-core.c	/^void pblk_dir_sysfs_force(struct pblk *pblk, int force)$/;"	f
+pblk_discard	pblk-core.c	/^void pblk_discard(struct pblk *pblk, struct bio *bio)$/;"	f
+pblk_dma_meta_size	pblk.h	136;"	d
+pblk_dma_ppa_size	pblk.h	137;"	d
+pblk_down_page	pblk-core.c	/^void pblk_down_page(struct pblk *pblk, struct ppa_addr *ppa_list, int nr_ppas)$/;"	f
+pblk_down_rq	pblk-core.c	/^void pblk_down_rq(struct pblk *pblk, struct ppa_addr *ppa_list, int nr_ppas,$/;"	f
+pblk_emeta	pblk.h	/^struct pblk_emeta {$/;"	s
+pblk_end_io_erase	pblk-core.c	/^static void pblk_end_io_erase(struct nvm_rq *rqd)$/;"	f	file:
+pblk_end_io_read	pblk-read.c	/^static void pblk_end_io_read(struct nvm_rq *rqd)$/;"	f	file:
+pblk_end_io_recov	pblk-recovery.c	/^static void pblk_end_io_recov(struct nvm_rq *rqd)$/;"	f	file:
+pblk_end_io_sync	pblk-core.c	/^void pblk_end_io_sync(struct nvm_rq *rqd)$/;"	f
+pblk_end_io_write	pblk-write.c	/^static void pblk_end_io_write(struct nvm_rq *rqd)$/;"	f	file:
+pblk_end_io_write_meta	pblk-write.c	/^static void pblk_end_io_write_meta(struct nvm_rq *rqd)$/;"	f	file:
+pblk_end_queued_w_bio	pblk-write.c	/^static unsigned long pblk_end_queued_w_bio(struct pblk *pblk,$/;"	f	file:
+pblk_end_user_read	pblk-read.c	/^static void pblk_end_user_read(struct bio *bio)$/;"	f	file:
+pblk_end_w_bio	pblk-write.c	/^static unsigned long pblk_end_w_bio(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_end_w_fail	pblk-write.c	/^static void pblk_end_w_fail(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f	file:
+pblk_exit	pblk-init.c	/^static void pblk_exit(void *private)$/;"	f	file:
+pblk_flush_writer	pblk-core.c	/^static void pblk_flush_writer(struct pblk *pblk)$/;"	f	file:
+pblk_free	pblk-init.c	/^static void pblk_free(struct pblk *pblk)$/;"	f	file:
+pblk_free_global_caches	pblk-init.c	/^static void pblk_free_global_caches(struct pblk *pblk)$/;"	f	file:
+pblk_free_rqd	pblk-core.c	/^void pblk_free_rqd(struct pblk *pblk, struct nvm_rq *rqd, int type)$/;"	f
+pblk_free_write_rqd	pblk-write.c	/^static void pblk_free_write_rqd(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f	file:
+pblk_g_ctx	pblk.h	/^struct pblk_g_ctx {$/;"	s
+pblk_g_rq_cache	pblk-init.c	/^static struct kmem_cache *pblk_ws_cache, *pblk_rec_cache, *pblk_g_rq_cache,$/;"	v	typeref:struct:	file:
+pblk_g_rq_size	pblk.h	829;"	d
+pblk_gc	pblk.h	/^struct pblk_gc {$/;"	s
+pblk_gc_exit	pblk-gc.c	/^void pblk_gc_exit(struct pblk *pblk)$/;"	f
+pblk_gc_free_full_lines	pblk-gc.c	/^void pblk_gc_free_full_lines(struct pblk *pblk)$/;"	f
+pblk_gc_free_gc_rq	pblk-gc.c	/^static void pblk_gc_free_gc_rq(struct pblk_gc_rq *gc_rq)$/;"	f	file:
+pblk_gc_get_victim_line	pblk-gc.c	/^static struct pblk_line *pblk_gc_get_victim_line(struct pblk *pblk,$/;"	f	file:
+pblk_gc_init	pblk-gc.c	/^int pblk_gc_init(struct pblk *pblk)$/;"	f
+pblk_gc_kick	pblk-gc.c	/^static void pblk_gc_kick(struct pblk *pblk)$/;"	f	file:
+pblk_gc_line	pblk-gc.c	/^static int pblk_gc_line(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_gc_line_prepare_ws	pblk-gc.c	/^static void pblk_gc_line_prepare_ws(struct work_struct *work)$/;"	f	file:
+pblk_gc_line_ws	pblk-gc.c	/^static void pblk_gc_line_ws(struct work_struct *work)$/;"	f	file:
+pblk_gc_read	pblk-gc.c	/^static int pblk_gc_read(struct pblk *pblk)$/;"	f	file:
+pblk_gc_reader_kick	pblk-gc.c	/^static void pblk_gc_reader_kick(struct pblk_gc *gc)$/;"	f	file:
+pblk_gc_reader_ts	pblk-gc.c	/^static int pblk_gc_reader_ts(void *data)$/;"	f	file:
+pblk_gc_rq	pblk.h	/^struct pblk_gc_rq {$/;"	s
+pblk_gc_run	pblk-gc.c	/^static void pblk_gc_run(struct pblk *pblk)$/;"	f	file:
+pblk_gc_should_kick	pblk-gc.c	/^void pblk_gc_should_kick(struct pblk *pblk)$/;"	f
+pblk_gc_should_run	pblk-gc.c	/^static bool pblk_gc_should_run(struct pblk_gc *gc, struct pblk_rl *rl)$/;"	f	file:
+pblk_gc_should_start	pblk-gc.c	/^void pblk_gc_should_start(struct pblk *pblk)$/;"	f
+pblk_gc_should_stop	pblk-gc.c	/^void pblk_gc_should_stop(struct pblk *pblk)$/;"	f
+pblk_gc_start	pblk-gc.c	/^static void pblk_gc_start(struct pblk *pblk)$/;"	f	file:
+pblk_gc_sysfs_force	pblk-gc.c	/^int pblk_gc_sysfs_force(struct pblk *pblk, int force)$/;"	f
+pblk_gc_sysfs_state_show	pblk-gc.c	/^void pblk_gc_sysfs_state_show(struct pblk *pblk, int *gc_enabled,$/;"	f
+pblk_gc_timer	pblk-gc.c	/^static void pblk_gc_timer(struct timer_list *t)$/;"	f	file:
+pblk_gc_ts	pblk-gc.c	/^static int pblk_gc_ts(void *data)$/;"	f	file:
+pblk_gc_write	pblk-gc.c	/^static int pblk_gc_write(struct pblk *pblk)$/;"	f	file:
+pblk_gc_writer_kick	pblk-gc.c	/^static void pblk_gc_writer_kick(struct pblk_gc *gc)$/;"	f	file:
+pblk_gc_writer_ts	pblk-gc.c	/^static int pblk_gc_writer_ts(void *data)$/;"	f	file:
+pblk_gen_run_ws	pblk-core.c	/^void pblk_gen_run_ws(struct pblk *pblk, struct pblk_line *line, void *priv,$/;"	f
+pblk_get_bi_idx	pblk.h	/^static inline unsigned int pblk_get_bi_idx(struct bio *bio)$/;"	f
+pblk_get_lba	pblk.h	/^static inline sector_t pblk_get_lba(struct bio *bio)$/;"	f
+pblk_get_secs	pblk.h	/^static inline unsigned int pblk_get_secs(struct bio *bio)$/;"	f
+pblk_get_write_amp	pblk-sysfs.c	/^static ssize_t pblk_get_write_amp(u64 user, u64 gc, u64 pad,$/;"	f	file:
+pblk_init	pblk-init.c	/^static void *pblk_init(struct nvm_tgt_dev *dev, struct gendisk *tdisk,$/;"	f	file:
+pblk_init_global_caches	pblk-init.c	/^static int pblk_init_global_caches(struct pblk *pblk)$/;"	f	file:
+pblk_invalidate_range	pblk-core.c	/^static void pblk_invalidate_range(struct pblk *pblk, sector_t slba,$/;"	f	file:
+pblk_io_aligned	pblk.h	/^static inline int pblk_io_aligned(struct pblk *pblk, int nr_secs)$/;"	f
+pblk_ktype	pblk-sysfs.c	/^static struct kobj_type pblk_ktype = {$/;"	v	typeref:struct:kobj_type	file:
+pblk_l2p_crc	pblk-init.c	/^static u32 pblk_l2p_crc(struct pblk *pblk)$/;"	f	file:
+pblk_l2p_free	pblk-init.c	/^static void pblk_l2p_free(struct pblk *pblk)$/;"	f	file:
+pblk_l2p_init	pblk-init.c	/^static int pblk_l2p_init(struct pblk *pblk, bool factory_init)$/;"	f	file:
+pblk_l2p_recover	pblk-init.c	/^static int pblk_l2p_recover(struct pblk *pblk, bool factory_init)$/;"	f	file:
+pblk_line	pblk.h	/^struct pblk_line {$/;"	s
+pblk_line_close	pblk-core.c	/^void pblk_line_close(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_close_meta	pblk-core.c	/^void pblk_line_close_meta(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_close_meta_sync	pblk-core.c	/^static void pblk_line_close_meta_sync(struct pblk *pblk)$/;"	f	file:
+pblk_line_close_ws	pblk-core.c	/^void pblk_line_close_ws(struct work_struct *work)$/;"	f
+pblk_line_emeta_start	pblk-recovery.c	/^static u64 pblk_line_emeta_start(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_line_erase	pblk-core.c	/^int pblk_line_erase(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_free	pblk-core.c	/^void pblk_line_free(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_gc_list	pblk-core.c	/^struct list_head *pblk_line_gc_list(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_get	pblk-core.c	/^struct pblk_line *pblk_line_get(struct pblk *pblk)$/;"	f
+pblk_line_get_data	pblk-core.c	/^struct pblk_line *pblk_line_get_data(struct pblk *pblk)$/;"	f
+pblk_line_get_erase	pblk-core.c	/^struct pblk_line *pblk_line_get_erase(struct pblk *pblk)$/;"	f
+pblk_line_get_first_data	pblk-core.c	/^struct pblk_line *pblk_line_get_first_data(struct pblk *pblk)$/;"	f
+pblk_line_get_first_trans	pblk-core.c	/^struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk)$/;"	f
+pblk_line_init_bb	pblk-core.c	/^static int pblk_line_init_bb(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_line_init_metadata	pblk-core.c	/^static int pblk_line_init_metadata(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_line_is_full	pblk-core.c	/^int pblk_line_is_full(struct pblk_line *line)$/;"	f
+pblk_line_mark_bb	pblk-core.c	/^static void pblk_line_mark_bb(struct work_struct *work)$/;"	f	file:
+pblk_line_meta	pblk.h	/^struct pblk_line_meta {$/;"	s
+pblk_line_meta_free	pblk-init.c	/^static void pblk_line_meta_free(struct pblk_line *line)$/;"	f	file:
+pblk_line_meta_init	pblk-init.c	/^static int pblk_line_meta_init(struct pblk *pblk)$/;"	f	file:
+pblk_line_mg_free	pblk-init.c	/^static void pblk_line_mg_free(struct pblk *pblk)$/;"	f	file:
+pblk_line_mg_init	pblk-init.c	/^static int pblk_line_mg_init(struct pblk *pblk)$/;"	f	file:
+pblk_line_mgmt	pblk.h	/^struct pblk_line_mgmt {$/;"	s
+pblk_line_prepare	pblk-core.c	/^static int pblk_line_prepare(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_line_put	pblk-core.c	/^void pblk_line_put(struct kref *ref)$/;"	f
+pblk_line_put_wq	pblk-core.c	/^void pblk_line_put_wq(struct kref *ref)$/;"	f
+pblk_line_put_ws	pblk-core.c	/^static void pblk_line_put_ws(struct work_struct *work)$/;"	f	file:
+pblk_line_read_emeta	pblk-core.c	/^int pblk_line_read_emeta(struct pblk *pblk, struct pblk_line *line,$/;"	f
+pblk_line_read_smeta	pblk-core.c	/^int pblk_line_read_smeta(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_recov_alloc	pblk-core.c	/^int pblk_line_recov_alloc(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_recov_close	pblk-core.c	/^void pblk_line_recov_close(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_replace_data	pblk-core.c	/^struct pblk_line *pblk_line_replace_data(struct pblk *pblk)$/;"	f
+pblk_line_replace_trans	pblk-core.c	/^struct pblk_line *pblk_line_replace_trans(struct pblk *pblk)$/;"	f
+pblk_line_retry	pblk-core.c	/^static struct pblk_line *pblk_line_retry(struct pblk *pblk,$/;"	f	file:
+pblk_line_setup_metadata	pblk-core.c	/^static void pblk_line_setup_metadata(struct pblk_line *line,$/;"	f	file:
+pblk_line_setup_metadata_trans	pblk-core.c	/^static void pblk_line_setup_metadata_trans(struct pblk_line *line,$/;"	f	file:
+pblk_line_should_sync_meta	pblk-core.c	/^static void pblk_line_should_sync_meta(struct pblk *pblk)$/;"	f	file:
+pblk_line_smeta_start	pblk-core.c	/^u64 pblk_line_smeta_start(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_line_submit_emeta_io	pblk-core.c	/^static int pblk_line_submit_emeta_io(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_line_submit_smeta_io	pblk-core.c	/^static int pblk_line_submit_smeta_io(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_line_submit_trans_io	pblk-trans-io.c	/^static int pblk_line_submit_trans_io(struct pblk *pblk, struct pblk_trans_entry *entry, int dir)$/;"	f	file:
+pblk_line_trans_retry	pblk-core.c	/^static struct pblk_line *pblk_line_trans_retry(struct pblk *pblk,$/;"	f	file:
+pblk_line_vsc	pblk.h	/^static inline int pblk_line_vsc(struct pblk_line *line)$/;"	f
+pblk_line_was_written	pblk-recovery.c	/^static int pblk_line_was_written(struct pblk_line *line,$/;"	f	file:
+pblk_line_ws	pblk.h	/^struct pblk_line_ws {$/;"	s
+pblk_lines_free	pblk-init.c	/^static void pblk_lines_free(struct pblk *pblk)$/;"	f	file:
+pblk_lines_init	pblk-init.c	/^static int pblk_lines_init(struct pblk *pblk)$/;"	f	file:
+pblk_log_read_err	pblk-core.c	/^void pblk_log_read_err(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f
+pblk_log_write_err	pblk-core.c	/^void pblk_log_write_err(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f
+pblk_lookup_l2p_rand	pblk-core.c	/^void pblk_lookup_l2p_rand(struct pblk *pblk, struct ppa_addr *ppas,$/;"	f
+pblk_lookup_l2p_seq	pblk-core.c	/^void pblk_lookup_l2p_seq(struct pblk *pblk, struct ppa_addr *ppas,$/;"	f
+pblk_lookup_page	pblk-core.c	/^u64 pblk_lookup_page(struct pblk *pblk, struct pblk_line *line)$/;"	f
+pblk_lun	pblk.h	/^struct pblk_lun {$/;"	s
+pblk_luns_init	pblk-init.c	/^static int pblk_luns_init(struct pblk *pblk)$/;"	f	file:
+pblk_make_rq	pblk-init.c	/^static blk_qc_t pblk_make_rq(struct request_queue *q, struct bio *bio)$/;"	f	file:
+pblk_malloc	pblk.h	/^static inline void *pblk_malloc(size_t size, int type, gfp_t flags)$/;"	f
+pblk_map_erase_rq	pblk-map.c	/^void pblk_map_erase_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f
+pblk_map_invalidate	pblk-core.c	/^void pblk_map_invalidate(struct pblk *pblk, struct ppa_addr ppa)$/;"	f
+pblk_map_page_data	pblk-map.c	/^static void pblk_map_page_data(struct pblk *pblk, unsigned int sentry,$/;"	f	file:
+pblk_map_rq	pblk-map.c	/^void pblk_map_rq(struct pblk *pblk, struct nvm_rq *rqd, unsigned int sentry,$/;"	f
+pblk_mark_bb	pblk-core.c	/^static void pblk_mark_bb(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_mfree	pblk.h	/^static inline void pblk_mfree(void *ptr, int type)$/;"	f
+pblk_module_exit	pblk-init.c	/^module_exit(pblk_module_exit);$/;"	v
+pblk_module_exit	pblk-init.c	/^static void pblk_module_exit(void)$/;"	f	file:
+pblk_module_init	pblk-init.c	/^module_init(pblk_module_init);$/;"	v
+pblk_module_init	pblk-init.c	/^static int __init pblk_module_init(void)$/;"	f	file:
+pblk_pad_distance	pblk.h	/^static inline int pblk_pad_distance(struct pblk *pblk)$/;"	f
+pblk_pad_rq	pblk.h	/^struct pblk_pad_rq {$/;"	s
+pblk_partial_read_bio	pblk-read.c	/^static int pblk_partial_read_bio(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_pipeline_stop	pblk-core.c	/^void pblk_pipeline_stop(struct pblk *pblk)$/;"	f
+pblk_ppa32_to_ppa64	pblk.h	/^static inline struct ppa_addr pblk_ppa32_to_ppa64(struct pblk *pblk, u32 ppa32)$/;"	f
+pblk_ppa64_to_ppa32	pblk.h	/^static inline u32 pblk_ppa64_to_ppa32(struct pblk *pblk, struct ppa_addr ppa64)$/;"	f
+pblk_ppa_comp	pblk.h	/^static inline bool pblk_ppa_comp(struct ppa_addr lppa, struct ppa_addr rppa)$/;"	f
+pblk_ppa_empty	pblk.h	/^static inline int pblk_ppa_empty(struct ppa_addr ppa_addr)$/;"	f
+pblk_ppa_set_empty	pblk.h	/^static inline void pblk_ppa_set_empty(struct ppa_addr *ppa_addr)$/;"	f
+pblk_ppa_to_line	pblk.h	/^static inline int pblk_ppa_to_line(struct ppa_addr p)$/;"	f
+pblk_ppa_to_pos	pblk.h	/^static inline int pblk_ppa_to_pos(struct nvm_geo *geo, struct ppa_addr p)$/;"	f
+pblk_prepare_new_line	pblk-core.c	/^static int pblk_prepare_new_line(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_print_failed_rqd	pblk.h	/^static inline void pblk_print_failed_rqd(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f
+pblk_put_line_back	pblk-gc.c	/^static void pblk_put_line_back(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_rb	pblk.h	/^struct pblk_rb {$/;"	s
+pblk_rb_calculate_size	pblk-rb.c	/^unsigned int pblk_rb_calculate_size(unsigned int nr_entries)$/;"	f
+pblk_rb_copy_to_bio	pblk-rb.c	/^int pblk_rb_copy_to_bio(struct pblk_rb *rb, struct bio *bio, sector_t lba,$/;"	f
+pblk_rb_data_free	pblk-rb.c	/^void pblk_rb_data_free(struct pblk_rb *rb)$/;"	f
+pblk_rb_entries_ref	pblk-rb.c	/^void *pblk_rb_entries_ref(struct pblk_rb *rb)$/;"	f
+pblk_rb_entry	pblk.h	/^struct pblk_rb_entry {$/;"	s
+pblk_rb_flush	pblk-rb.c	/^void pblk_rb_flush(struct pblk_rb *rb)$/;"	f
+pblk_rb_flush_point_count	pblk-rb.c	/^unsigned int pblk_rb_flush_point_count(struct pblk_rb *rb)$/;"	f
+pblk_rb_flush_point_set	pblk-rb.c	/^static int pblk_rb_flush_point_set(struct pblk_rb *rb, struct bio *bio,$/;"	f	file:
+pblk_rb_init	pblk-rb.c	/^int pblk_rb_init(struct pblk_rb *rb, struct pblk_rb_entry *rb_entry_base,$/;"	f
+pblk_rb_may_write	pblk-rb.c	/^static int pblk_rb_may_write(struct pblk_rb *rb, unsigned int nr_entries,$/;"	f	file:
+pblk_rb_may_write_flush	pblk-rb.c	/^static int pblk_rb_may_write_flush(struct pblk_rb *rb, unsigned int nr_entries,$/;"	f	file:
+pblk_rb_may_write_gc	pblk-rb.c	/^int pblk_rb_may_write_gc(struct pblk_rb *rb, unsigned int nr_entries,$/;"	f
+pblk_rb_may_write_user	pblk-rb.c	/^int pblk_rb_may_write_user(struct pblk_rb *rb, struct bio *bio,$/;"	f
+pblk_rb_pages	pblk.h	/^struct pblk_rb_pages {$/;"	s
+pblk_rb_pos_oob	pblk-rb.c	/^int pblk_rb_pos_oob(struct pblk_rb *rb, u64 pos)$/;"	f
+pblk_rb_read_commit	pblk-rb.c	/^unsigned int pblk_rb_read_commit(struct pblk_rb *rb, unsigned int nr_entries)$/;"	f
+pblk_rb_read_count	pblk-rb.c	/^unsigned int pblk_rb_read_count(struct pblk_rb *rb)$/;"	f
+pblk_rb_read_to_bio	pblk-rb.c	/^unsigned int pblk_rb_read_to_bio(struct pblk_rb *rb, struct nvm_rq *rqd,$/;"	f
+pblk_rb_read_to_bio_list	pblk-rb.c	/^unsigned int pblk_rb_read_to_bio_list(struct pblk_rb *rb, struct bio *bio,$/;"	f
+pblk_rb_ring_count	pblk-rb.c	156;"	d	file:
+pblk_rb_ring_space	pblk-rb.c	157;"	d	file:
+pblk_rb_space	pblk-rb.c	/^static unsigned int pblk_rb_space(struct pblk_rb *rb)$/;"	f	file:
+pblk_rb_sync_advance	pblk-rb.c	/^unsigned int pblk_rb_sync_advance(struct pblk_rb *rb, unsigned int nr_entries)$/;"	f
+pblk_rb_sync_count	pblk-rb.c	/^unsigned int pblk_rb_sync_count(struct pblk_rb *rb)$/;"	f
+pblk_rb_sync_l2p	pblk-rb.c	/^void pblk_rb_sync_l2p(struct pblk_rb *rb)$/;"	f
+pblk_rb_sync_scan_entry	pblk-rb.c	/^struct pblk_rb_entry *pblk_rb_sync_scan_entry(struct pblk_rb *rb,$/;"	f
+pblk_rb_sysfs	pblk-rb.c	/^ssize_t pblk_rb_sysfs(struct pblk_rb *rb, char *buf)$/;"	f
+pblk_rb_tear_down_check	pblk-rb.c	/^int pblk_rb_tear_down_check(struct pblk_rb *rb)$/;"	f
+pblk_rb_update_l2p	pblk-rb.c	/^static int pblk_rb_update_l2p(struct pblk_rb *rb, unsigned int nr_entries,$/;"	f	file:
+pblk_rb_w_ctx	pblk-rb.c	/^struct pblk_w_ctx *pblk_rb_w_ctx(struct pblk_rb *rb, unsigned int pos)$/;"	f
+pblk_rb_wrap_pos	pblk-rb.c	/^unsigned int pblk_rb_wrap_pos(struct pblk_rb *rb, unsigned int pos)$/;"	f
+pblk_rb_write_entry_gc	pblk-rb.c	/^void pblk_rb_write_entry_gc(struct pblk_rb *rb, void *data,$/;"	f
+pblk_rb_write_entry_user	pblk-rb.c	/^void pblk_rb_write_entry_user(struct pblk_rb *rb, void *data,$/;"	f
+pblk_read_check	pblk-read.c	/^static void pblk_read_check(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_read_from_cache	pblk-read.c	/^static int pblk_read_from_cache(struct pblk *pblk, struct bio *bio,$/;"	f	file:
+pblk_read_ppalist_rq	pblk-read.c	/^static void pblk_read_ppalist_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_read_put_rqd_kref	pblk-read.c	/^static void pblk_read_put_rqd_kref(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f	file:
+pblk_read_rq	pblk-read.c	/^static void pblk_read_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_rec_cache	pblk-init.c	/^static struct kmem_cache *pblk_ws_cache, *pblk_rec_cache, *pblk_g_rq_cache,$/;"	v	typeref:struct:	file:
+pblk_rec_ctx	pblk.h	/^struct pblk_rec_ctx {$/;"	s
+pblk_recov_alloc	pblk-recovery.c	/^struct pblk_recov_alloc {$/;"	s	file:
+pblk_recov_check_emeta	pblk-recovery.c	/^int pblk_recov_check_emeta(struct pblk *pblk, struct line_emeta *emeta_buf)$/;"	f
+pblk_recov_check_line_version	pblk-recovery.c	/^static int pblk_recov_check_line_version(struct pblk *pblk,$/;"	f	file:
+pblk_recov_complete	pblk-recovery.c	/^static void pblk_recov_complete(struct kref *ref)$/;"	f	file:
+pblk_recov_l2p	pblk-recovery.c	/^struct pblk_line *pblk_recov_l2p(struct pblk *pblk)$/;"	f
+pblk_recov_l2p_from_emeta	pblk-recovery.c	/^static int pblk_recov_l2p_from_emeta(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_recov_l2p_from_oob	pblk-recovery.c	/^static int pblk_recov_l2p_from_oob(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_recov_line_add_ordered	pblk-recovery.c	/^static void pblk_recov_line_add_ordered(struct list_head *head,$/;"	f	file:
+pblk_recov_pad	pblk-recovery.c	/^int pblk_recov_pad(struct pblk *pblk)$/;"	f
+pblk_recov_pad_oob	pblk-recovery.c	/^static int pblk_recov_pad_oob(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_recov_read_oob	pblk-recovery.c	/^static int pblk_recov_read_oob(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_recov_scan_all_oob	pblk-recovery.c	/^static int pblk_recov_scan_all_oob(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_recov_scan_oob	pblk-recovery.c	/^static int pblk_recov_scan_oob(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_recov_setup_rq	pblk-recovery.c	/^int pblk_recov_setup_rq(struct pblk *pblk, struct pblk_c_ctx *c_ctx,$/;"	f
+pblk_recov_wa_counters	pblk-recovery.c	/^static void pblk_recov_wa_counters(struct pblk *pblk,$/;"	f	file:
+pblk_rl	pblk.h	/^struct pblk_rl {$/;"	s
+pblk_rl_free	pblk-rl.c	/^void pblk_rl_free(struct pblk_rl *rl)$/;"	f
+pblk_rl_free_lines_dec	pblk-rl.c	/^void pblk_rl_free_lines_dec(struct pblk_rl *rl, struct pblk_line *line,$/;"	f
+pblk_rl_free_lines_inc	pblk-rl.c	/^void pblk_rl_free_lines_inc(struct pblk_rl *rl, struct pblk_line *line)$/;"	f
+pblk_rl_gc_in	pblk-rl.c	/^void pblk_rl_gc_in(struct pblk_rl *rl, int nr_entries)$/;"	f
+pblk_rl_gc_may_insert	pblk-rl.c	/^int pblk_rl_gc_may_insert(struct pblk_rl *rl, int nr_entries)$/;"	f
+pblk_rl_high_thrs	pblk-rl.c	/^int pblk_rl_high_thrs(struct pblk_rl *rl)$/;"	f
+pblk_rl_init	pblk-rl.c	/^void pblk_rl_init(struct pblk_rl *rl, int budget)$/;"	f
+pblk_rl_inserted	pblk-rl.c	/^void pblk_rl_inserted(struct pblk_rl *rl, int nr_entries)$/;"	f
+pblk_rl_is_limit	pblk-rl.c	/^int pblk_rl_is_limit(struct pblk_rl *rl)$/;"	f
+pblk_rl_kick_u_timer	pblk-rl.c	/^static void pblk_rl_kick_u_timer(struct pblk_rl *rl)$/;"	f	file:
+pblk_rl_max_io	pblk-rl.c	/^int pblk_rl_max_io(struct pblk_rl *rl)$/;"	f
+pblk_rl_nr_free_blks	pblk-rl.c	/^unsigned long pblk_rl_nr_free_blks(struct pblk_rl *rl)$/;"	f
+pblk_rl_nr_user_free_blks	pblk-rl.c	/^unsigned long pblk_rl_nr_user_free_blks(struct pblk_rl *rl)$/;"	f
+pblk_rl_out	pblk-rl.c	/^void pblk_rl_out(struct pblk_rl *rl, int nr_user, int nr_gc)$/;"	f
+pblk_rl_u_timer	pblk-rl.c	/^static void pblk_rl_u_timer(struct timer_list *t)$/;"	f	file:
+pblk_rl_update_rates	pblk-rl.c	/^void pblk_rl_update_rates(struct pblk_rl *rl)$/;"	f
+pblk_rl_user_in	pblk-rl.c	/^void pblk_rl_user_in(struct pblk_rl *rl, int nr_entries)$/;"	f
+pblk_rl_user_may_insert	pblk-rl.c	/^int pblk_rl_user_may_insert(struct pblk_rl *rl, int nr_entries)$/;"	f
+pblk_rw_io	pblk-init.c	/^static int pblk_rw_io(struct request_queue *q, struct pblk *pblk,$/;"	f	file:
+pblk_rwb_free	pblk-init.c	/^static void pblk_rwb_free(struct pblk *pblk)$/;"	f	file:
+pblk_rwb_init	pblk-init.c	/^static int pblk_rwb_init(struct pblk *pblk)$/;"	f	file:
+pblk_sec_meta	pblk.h	/^struct pblk_sec_meta {$/;"	s
+pblk_set_addrf	pblk-init.c	/^static int pblk_set_addrf(struct pblk *pblk)$/;"	f	file:
+pblk_set_addrf_12	pblk-init.c	/^static int pblk_set_addrf_12(struct nvm_geo *geo, struct nvm_addrf_12 *dst)$/;"	f	file:
+pblk_set_addrf_20	pblk-init.c	/^static int pblk_set_addrf_20(struct nvm_geo *geo, struct nvm_addrf *adst,$/;"	f	file:
+pblk_set_progr_mode	pblk.h	/^static inline int pblk_set_progr_mode(struct pblk *pblk, int type)$/;"	f
+pblk_set_provision	pblk-init.c	/^static void pblk_set_provision(struct pblk *pblk, long nr_free_blks)$/;"	f	file:
+pblk_set_read_mode	pblk.h	/^static inline int pblk_set_read_mode(struct pblk *pblk, int type)$/;"	f
+pblk_set_sec_per_write	pblk-core.c	/^void pblk_set_sec_per_write(struct pblk *pblk, int sec_per_write)$/;"	f
+pblk_set_space_limit	pblk-core.c	/^static void pblk_set_space_limit(struct pblk *pblk)$/;"	f	file:
+pblk_setup_e_rq	pblk-core.c	/^static void pblk_setup_e_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_setup_line_meta	pblk-init.c	/^static long pblk_setup_line_meta(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_setup_line_meta_12	pblk-init.c	/^static int pblk_setup_line_meta_12(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_setup_line_meta_20	pblk-init.c	/^static int pblk_setup_line_meta_20(struct pblk *pblk, struct pblk_line *line,$/;"	f	file:
+pblk_setup_uuid	pblk.h	/^static inline void pblk_setup_uuid(struct pblk *pblk)$/;"	f
+pblk_setup_w_rec_rq	pblk-write.c	/^int pblk_setup_w_rec_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f
+pblk_setup_w_rq	pblk-write.c	/^static int pblk_setup_w_rq(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+pblk_should_submit_meta_io	pblk-write.c	/^static struct pblk_line *pblk_should_submit_meta_io(struct pblk *pblk,$/;"	f	file:
+pblk_smeta	pblk.h	/^struct pblk_smeta {$/;"	s
+pblk_stop_writes	pblk-core.c	/^static void pblk_stop_writes(struct pblk *pblk, struct pblk_line *line)$/;"	f	file:
+pblk_submit_io	pblk-core.c	/^int pblk_submit_io(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f
+pblk_submit_io_set	pblk-write.c	/^static int pblk_submit_io_set(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f	file:
+pblk_submit_io_sync	pblk-core.c	/^int pblk_submit_io_sync(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f
+pblk_submit_meta_io	pblk-write.c	/^int pblk_submit_meta_io(struct pblk *pblk, struct pblk_line *meta_line)$/;"	f
+pblk_submit_read	pblk-read.c	/^int pblk_submit_read(struct pblk *pblk, struct bio *bio)$/;"	f
+pblk_submit_read_gc	pblk-read.c	/^int pblk_submit_read_gc(struct pblk *pblk, struct pblk_gc_rq *gc_rq)$/;"	f
+pblk_submit_read_io	pblk-read.c	/^static int pblk_submit_read_io(struct pblk *pblk, struct nvm_rq *rqd)$/;"	f	file:
+pblk_submit_rec	pblk-recovery.c	/^void pblk_submit_rec(struct work_struct *work)$/;"	f
+pblk_submit_write	pblk-write.c	/^static int pblk_submit_write(struct pblk *pblk)$/;"	f	file:
+pblk_sysfs_exit	pblk-sysfs.c	/^void pblk_sysfs_exit(struct gendisk *tdisk)$/;"	f
+pblk_sysfs_flush_force	pblk-sysfs.c	/^static ssize_t pblk_sysfs_flush_force(struct pblk *pblk, const char *page,$/;"	f	file:
+pblk_sysfs_gc_force	pblk-sysfs.c	/^static ssize_t pblk_sysfs_gc_force(struct pblk *pblk, const char *page,$/;"	f	file:
+pblk_sysfs_gc_state_show	pblk-sysfs.c	/^static ssize_t pblk_sysfs_gc_state_show(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_get_padding_dist	pblk-sysfs.c	/^static ssize_t pblk_sysfs_get_padding_dist(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_get_sec_per_write	pblk-sysfs.c	/^static ssize_t pblk_sysfs_get_sec_per_write(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_get_write_amp_mileage	pblk-sysfs.c	/^static ssize_t pblk_sysfs_get_write_amp_mileage(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_get_write_amp_trip	pblk-sysfs.c	/^static ssize_t pblk_sysfs_get_write_amp_trip(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_init	pblk-sysfs.c	/^int pblk_sysfs_init(struct gendisk *tdisk)$/;"	f
+pblk_sysfs_lines	pblk-sysfs.c	/^static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_lines_info	pblk-sysfs.c	/^static ssize_t pblk_sysfs_lines_info(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_luns_show	pblk-sysfs.c	/^static ssize_t pblk_sysfs_luns_show(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_ops	pblk-sysfs.c	/^static const struct sysfs_ops pblk_sysfs_ops = {$/;"	v	typeref:struct:sysfs_ops	file:
+pblk_sysfs_ppaf	pblk-sysfs.c	/^static ssize_t pblk_sysfs_ppaf(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_rate_limiter	pblk-sysfs.c	/^static ssize_t pblk_sysfs_rate_limiter(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_set_padding_dist	pblk-sysfs.c	/^static ssize_t pblk_sysfs_set_padding_dist(struct pblk *pblk,$/;"	f	file:
+pblk_sysfs_set_sec_per_write	pblk-sysfs.c	/^static ssize_t pblk_sysfs_set_sec_per_write(struct pblk *pblk,$/;"	f	file:
+pblk_sysfs_set_write_amp_trip	pblk-sysfs.c	/^static ssize_t pblk_sysfs_set_write_amp_trip(struct pblk *pblk,$/;"	f	file:
+pblk_sysfs_show	pblk-sysfs.c	/^static ssize_t pblk_sysfs_show(struct kobject *kobj, struct attribute *attr,$/;"	f	file:
+pblk_sysfs_stats	pblk-sysfs.c	/^static ssize_t pblk_sysfs_stats(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_stats_debug	pblk-sysfs.c	/^static ssize_t pblk_sysfs_stats_debug(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_sysfs_store	pblk-sysfs.c	/^static ssize_t pblk_sysfs_store(struct kobject *kobj, struct attribute *attr,$/;"	f	file:
+pblk_sysfs_write_buffer	pblk-sysfs.c	/^static ssize_t pblk_sysfs_write_buffer(struct pblk *pblk, char *page)$/;"	f	file:
+pblk_tear_down	pblk-init.c	/^static void pblk_tear_down(struct pblk *pblk)$/;"	f	file:
+pblk_trans_bench_calculate	pblk-trans-evict.c	/^int pblk_trans_bench_calculate(struct pblk *pblk)$/;"	f
+pblk_trans_cache	pblk.h	/^struct pblk_trans_cache {$/;"	s
+pblk_trans_cache_hit	pblk-trans-core.c	/^static int pblk_trans_cache_hit(struct pblk *pblk, sector_t lba, int type) {$/;"	f	file:
+pblk_trans_calc_exit	pblk-trans-calc.c	/^void pblk_trans_calc_exit(struct pblk *pblk)$/;"	f
+pblk_trans_calc_init	pblk-trans-calc.c	/^int pblk_trans_calc_init(struct pblk *pblk)$/;"	f
+pblk_trans_check_sector	pblk-trans-core.c	/^static bool pblk_trans_check_sector(struct pblk *pblk, size_t sector)$/;"	f	file:
+pblk_trans_dir	pblk.h	/^struct pblk_trans_dir {$/;"	s
+pblk_trans_do_calc	pblk-trans-calc.c	/^void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)$/;"	f
+pblk_trans_entry	pblk.h	/^struct pblk_trans_entry {$/;"	s
+pblk_trans_entry_shift_size	pblk-trans-core.c	/^static int pblk_trans_entry_shift_size(struct pblk *pblk)$/;"	f	file:
+pblk_trans_evict_exit	pblk-trans-evict.c	/^void pblk_trans_evict_exit(struct pblk *pblk)$/;"	f
+pblk_trans_evict_init	pblk-trans-evict.c	/^int pblk_trans_evict_init(struct pblk *pblk)$/;"	f
+pblk_trans_evict_kick	pblk-trans-evict.c	/^void pblk_trans_evict_kick(struct pblk *pblk)$/;"	f
+pblk_trans_evict_run	pblk-trans-evict.c	/^void pblk_trans_evict_run(struct pblk *pblk, int bench)$/;"	f
+pblk_trans_evict_timer	pblk-trans-evict.c	/^static void pblk_trans_evict_timer(struct timer_list *t)$/;"	f	file:
+pblk_trans_evict_ts	pblk-trans-evict.c	/^static int pblk_trans_evict_ts(void *data)$/;"	f	file:
+pblk_trans_free	pblk-trans-core.c	/^void pblk_trans_free(struct pblk *pblk)$/;"	f
+pblk_trans_gc_line_prepare_ws	pblk-gc.c	/^static void pblk_trans_gc_line_prepare_ws(struct work_struct *work)$/;"	f	file:
+pblk_trans_hit_calc	pblk-trans-calc.c	/^void pblk_trans_hit_calc(struct pblk_trans_entry *entry, int type)$/;"	f
+pblk_trans_hot_ratio_calc	pblk-trans-evict.c	/^static int pblk_trans_hot_ratio_calc(struct pblk_trans_entry *entry)$/;"	f	file:
+pblk_trans_hot_ratio_update	pblk-trans-calc.c	/^static void pblk_trans_hot_ratio_update(struct pblk *pblk)$/;"	f	file:
+pblk_trans_init	pblk-trans-core.c	/^int pblk_trans_init(struct pblk *pblk)$/;"	f
+pblk_trans_init_ratio	pblk-trans-core.c	/^static void pblk_trans_init_ratio(struct pblk_trans_ratio *ratio)$/;"	f	file:
+pblk_trans_l2p_map_get	pblk-trans-core.c	/^struct ppa_addr pblk_trans_l2p_map_get(struct pblk *pblk, sector_t lba)$/;"	f
+pblk_trans_l2p_map_set	pblk-trans-core.c	/^int pblk_trans_l2p_map_set(struct pblk *pblk, sector_t lba,$/;"	f
+pblk_trans_map_get	pblk.h	/^static inline struct ppa_addr pblk_trans_map_get(struct pblk *pblk,$/;"	f
+pblk_trans_map_set	pblk.h	/^static inline void pblk_trans_map_set(struct pblk *pblk, sector_t lba,$/;"	f
+pblk_trans_map_size	pblk-init.c	/^size_t pblk_trans_map_size(struct pblk *pblk)$/;"	f
+pblk_trans_op	pblk.h	/^struct pblk_trans_op {$/;"	s
+pblk_trans_ppa_get	pblk-trans-core.c	/^static struct ppa_addr pblk_trans_ppa_get (struct pblk *pblk, $/;"	f	file:
+pblk_trans_ppa_set	pblk-trans-core.c	/^static int pblk_trans_ppa_set (struct pblk *pblk, sector_t lba,$/;"	f	file:
+pblk_trans_ptr_get	pblk-trans-core.c	/^void* pblk_trans_ptr_get(struct pblk *pblk, void *ptr, size_t offset)$/;"	f
+pblk_trans_ratio	pblk.h	/^struct pblk_trans_ratio {$/;"	s
+pblk_trans_ratio_inc	pblk-trans-core.c	/^int pblk_trans_ratio_inc(struct pblk_trans_ratio *ratio, int type)$/;"	f
+pblk_trans_recov_from_mem	pblk-trans-core.c	/^static int pblk_trans_recov_from_mem(struct pblk *pblk)$/;"	f	file:
+pblk_trans_shift_size_get	pblk-trans-core.c	/^static int pblk_trans_shift_size_get(sector_t size)$/;"	f	file:
+pblk_trans_update_cache	pblk-trans-core.c	/^static int pblk_trans_update_cache (struct pblk *pblk, sector_t lba)$/;"	f	file:
+pblk_trans_update_kick	pblk-trans-calc.c	/^void pblk_trans_update_kick(struct pblk *pblk)$/;"	f
+pblk_trans_update_ts	pblk-trans-calc.c	/^static int pblk_trans_update_ts(void *data)$/;"	f	file:
+pblk_up_page	pblk-core.c	/^void pblk_up_page(struct pblk *pblk, struct ppa_addr *ppa_list, int nr_ppas)$/;"	f
+pblk_up_rq	pblk-core.c	/^void pblk_up_rq(struct pblk *pblk, struct ppa_addr *ppa_list, int nr_ppas,$/;"	f
+pblk_update_item	pblk.h	/^struct pblk_update_item {$/;"	s
+pblk_update_map	pblk-core.c	/^void pblk_update_map(struct pblk *pblk, sector_t lba, struct ppa_addr ppa)$/;"	f
+pblk_update_map_cache	pblk-core.c	/^void pblk_update_map_cache(struct pblk *pblk, sector_t lba, struct ppa_addr ppa)$/;"	f
+pblk_update_map_dev	pblk-core.c	/^void pblk_update_map_dev(struct pblk *pblk, sector_t lba,$/;"	f
+pblk_update_map_gc	pblk-core.c	/^int pblk_update_map_gc(struct pblk *pblk, sector_t lba, struct ppa_addr ppa_new,$/;"	f
+pblk_valid_meta_ppa	pblk-write.c	/^static inline bool pblk_valid_meta_ppa(struct pblk *pblk,$/;"	f	file:
+pblk_w_ctx	pblk.h	/^struct pblk_w_ctx {$/;"	s
+pblk_w_rq_cache	pblk-init.c	/^				*pblk_w_rq_cache;$/;"	v	typeref:struct:	file:
+pblk_w_rq_size	pblk.h	830;"	d
+pblk_wait_for_meta	pblk-core.c	/^static void pblk_wait_for_meta(struct pblk *pblk)$/;"	f	file:
+pblk_write_gc_to_cache	pblk-cache.c	/^int pblk_write_gc_to_cache(struct pblk *pblk, struct pblk_gc_rq *gc_rq)$/;"	f
+pblk_write_kick	pblk-core.c	/^static void pblk_write_kick(struct pblk *pblk)$/;"	f	file:
+pblk_write_should_kick	pblk-core.c	/^void pblk_write_should_kick(struct pblk *pblk)$/;"	f
+pblk_write_timer_fn	pblk-core.c	/^void pblk_write_timer_fn(struct timer_list *t)$/;"	f
+pblk_write_to_cache	pblk-cache.c	/^int pblk_write_to_cache(struct pblk *pblk, struct bio *bio, unsigned long flags)$/;"	f
+pblk_write_ts	pblk-write.c	/^int pblk_write_ts(void *data)$/;"	f
+pblk_writer_init	pblk-init.c	/^static int pblk_writer_init(struct pblk *pblk)$/;"	f	file:
+pblk_writer_stop	pblk-init.c	/^static void pblk_writer_stop(struct pblk *pblk)$/;"	f	file:
+pblk_ws_cache	pblk-init.c	/^static struct kmem_cache *pblk_ws_cache, *pblk_rec_cache, *pblk_g_rq_cache,$/;"	v	typeref:struct:kmem_cache	file:
+pgs_in_buffer	pblk.h	/^	int pgs_in_buffer; \/* Number of pages that need to be held in buffer to$/;"	m	struct:pblk
+pipeline_gc	pblk.h	/^	atomic_t pipeline_gc;	   \/* Number of lines in the GC pipeline -$/;"	m	struct:pblk_gc
+ppa	pblk.h	/^	struct ppa_addr ppa;		\/* Physic addr. associated with entry *\/$/;"	m	struct:pblk_w_ctx	typeref:struct:pblk_w_ctx::ppa_addr
+ppa_list	pblk-recovery.c	/^	struct ppa_addr *ppa_list;$/;"	m	struct:pblk_recov_alloc	typeref:struct:pblk_recov_alloc::ppa_addr	file:
+prev_id	pblk.h	/^	__le32 prev_id;		\/* Line id for prev line *\/$/;"	m	struct:line_emeta
+prev_id	pblk.h	/^	__le32 prev_id;		\/* Line id for previous line *\/$/;"	m	struct:line_smeta
+print_ppa	pblk.h	/^static inline void print_ppa(struct nvm_geo *geo, struct ppa_addr *p,$/;"	f
+priv	pblk.h	/^	void *priv;$/;"	m	struct:pblk_line_ws
+r_end_wq	pblk.h	/^	struct workqueue_struct *r_end_wq;$/;"	m	struct:pblk	typeref:struct:pblk::workqueue_struct
+r_list	pblk.h	/^	struct list_head r_list;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::list_head
+r_lock	pblk.h	/^	spinlock_t r_lock;$/;"	m	struct:pblk_gc
+r_rq_pool	pblk.h	/^	mempool_t *r_rq_pool;$/;"	m	struct:pblk
+rb_budget	pblk.h	/^	int rb_budget;		\/* Total number of entries available for I\/O *\/$/;"	m	struct:pblk_rl
+rb_gc_active	pblk.h	/^	int rb_gc_active;$/;"	m	struct:pblk_rl
+rb_gc_cnt	pblk.h	/^	atomic_t rb_gc_cnt;	\/* GC I\/O buffer counter *\/$/;"	m	struct:pblk_rl
+rb_gc_max	pblk.h	/^	int rb_gc_max;		\/* Max buffer entries available for GC I\/O *\/$/;"	m	struct:pblk_rl
+rb_gc_rsv	pblk.h	/^	int rb_gc_rsv;		\/* Reserved buffer entries for GC I\/O *\/$/;"	m	struct:pblk_rl
+rb_max_io	pblk.h	/^	int rb_max_io;		\/* Maximum size for an I\/O giving the config *\/$/;"	m	struct:pblk_rl
+rb_space	pblk.h	/^	atomic_t rb_space;	\/* Space limit in case of reaching capacity *\/$/;"	m	struct:pblk_rl
+rb_state	pblk.h	/^	int rb_state;		\/* Rate-limiter current state *\/$/;"	m	struct:pblk_rl
+rb_user_active	pblk.h	/^	int rb_user_active;$/;"	m	struct:pblk_rl
+rb_user_cnt	pblk.h	/^	atomic_t rb_user_cnt;	\/* User I\/O buffer counter *\/$/;"	m	struct:pblk_rl
+rb_user_max	pblk.h	/^	int rb_user_max;	\/* Max buffer entries available for user I\/O *\/$/;"	m	struct:pblk_rl
+rb_windows_pw	pblk.h	/^	int rb_windows_pw;	\/* Number of rate windows in the write buffer$/;"	m	struct:pblk_rl
+read	pblk.h	/^	atomic64_t read;$/;"	m	struct:pblk_trans_ratio
+read	pblk.h	/^	int (*read) (struct pblk *, struct pblk_trans_entry *);$/;"	m	struct:pblk_trans_op
+read_empty	pblk.h	/^	atomic_long_t read_empty;$/;"	m	struct:pblk
+read_failed	pblk.h	/^	atomic_long_t read_failed;$/;"	m	struct:pblk
+read_failed_gc	pblk.h	/^	atomic_long_t read_failed_gc;$/;"	m	struct:pblk
+read_high_ecc	pblk.h	/^	atomic_long_t read_high_ecc;$/;"	m	struct:pblk
+read_inflight_gc	pblk.h	/^	atomic_t read_inflight_gc; \/* Number of lines with inflight GC reads *\/$/;"	m	struct:pblk_gc
+read_ppalist_rq_gc	pblk-read.c	/^static int read_ppalist_rq_gc(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+read_rq_gc	pblk-read.c	/^static int read_rq_gc(struct pblk *pblk, struct nvm_rq *rqd,$/;"	f	file:
+rec_pool	pblk.h	/^	mempool_t *rec_pool;$/;"	m	struct:pblk
+recov_gc_reads	pblk.h	/^	atomic_long_t recov_gc_reads;	\/* Sectors submitted from read GC *\/$/;"	m	struct:pblk
+recov_gc_writes	pblk.h	/^	atomic_long_t recov_gc_writes;	\/* Sectors submitted from write GC *\/$/;"	m	struct:pblk
+recov_writes	pblk.h	/^	atomic_long_t recov_writes;	\/* Sectors submitted from recovery *\/$/;"	m	struct:pblk
+ref	pblk.h	/^	struct kref ref;		\/* Write buffer L2P references *\/$/;"	m	struct:pblk_line	typeref:struct:pblk_line::kref
+ref	pblk.h	/^	struct kref ref;$/;"	m	struct:pblk_pad_rq	typeref:struct:pblk_pad_rq::kref
+req_writes	pblk.h	/^	atomic_long_t req_writes;	\/* Sectors stored on write buffer *\/$/;"	m	struct:pblk
+reserved	pblk.h	/^	u64 reserved;$/;"	m	struct:pblk_sec_meta
+rl	pblk.h	/^	struct pblk_rl rl;$/;"	m	struct:pblk	typeref:struct:pblk::pblk_rl
+rqd	pblk-recovery.c	/^	struct nvm_rq *rqd;$/;"	m	struct:pblk_recov_alloc	typeref:struct:pblk_recov_alloc::nvm_rq	file:
+rqd	pblk.h	/^	struct nvm_rq *rqd;$/;"	m	struct:pblk_rec_ctx	typeref:struct:pblk_rec_ctx::nvm_rq
+rsv_blocks	pblk.h	/^	int rsv_blocks;		\/* Reserved blocks for GC *\/$/;"	m	struct:pblk_rl
+rsvd	pblk.h	/^	__le32 rsvd[2];$/;"	m	struct:line_smeta
+rwb	pblk.h	/^	struct pblk_rb rwb;$/;"	m	struct:pblk	typeref:struct:pblk::pblk_rb
+s_lock	pblk.h	/^	spinlock_t s_lock;		\/* Sync lock *\/$/;"	m	struct:pblk_rb
+sec_bitmap_len	pblk.h	/^	unsigned int sec_bitmap_len;	\/* Length for sector bitmap in line *\/$/;"	m	struct:pblk_line_meta
+sec_in_line	pblk.h	/^	unsigned int sec_in_line;	\/* Number of usable secs in line *\/$/;"	m	struct:pblk_line
+sec_lun_stripe	pblk.h	/^	int sec_lun_stripe;$/;"	m	struct:pblk_addrf
+sec_per_line	pblk.h	/^	unsigned int sec_per_line;	\/* Number of sectors in a line *\/$/;"	m	struct:pblk_line_meta
+sec_per_write	pblk.h	/^	int sec_per_write;$/;"	m	struct:pblk
+sec_stripe	pblk.h	/^	int sec_stripe;$/;"	m	struct:pblk_addrf
+sec_ws_stripe	pblk.h	/^	int sec_ws_stripe;$/;"	m	struct:pblk_addrf
+secs_to_gc	pblk.h	/^	int secs_to_gc;$/;"	m	struct:pblk_gc_rq
+seg_size	pblk.h	/^	unsigned int seg_size;		\/* Size of the data segments being$/;"	m	struct:pblk_rb
+sentry	pblk.h	/^	unsigned int sentry;$/;"	m	struct:pblk_c_ctx
+seq_nr	pblk.h	/^	__le64 seq_nr;		\/* Sequence number for current line *\/$/;"	m	struct:line_emeta
+seq_nr	pblk.h	/^	__le64 seq_nr;		\/* Sequence number for current line *\/$/;"	m	struct:line_smeta
+seq_nr	pblk.h	/^	unsigned int seq_nr;		\/* Unique line sequence number *\/$/;"	m	struct:pblk_line
+shift_size	pblk.h	/^	int shift_size;$/;"	m	struct:pblk_trans_dir
+size	pblk.h	/^	size_t size;                     \/* number of the lba. NOT REAL MEMORY ALLOCATION SIZE *\/$/;"	m	struct:pblk_trans_cache
+sline_meta	pblk.h	/^	struct pblk_smeta *sline_meta[PBLK_DATA_LINES];$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_smeta
+smeta	pblk.h	/^	struct pblk_smeta *smeta;	\/* Start metadata *\/$/;"	m	struct:pblk_line	typeref:struct:pblk_line::pblk_smeta
+smeta_len	pblk.h	/^	unsigned int smeta_len;		\/* Total length for smeta *\/$/;"	m	struct:pblk_line_meta
+smeta_sec	pblk.h	/^	unsigned int smeta_sec;		\/* Sectors needed for smeta *\/$/;"	m	struct:pblk_line_meta
+smeta_ssec	pblk.h	/^	u64 smeta_ssec;			\/* Sector where smeta starts *\/$/;"	m	struct:pblk_line
+start_time	pblk.h	/^	unsigned long start_time;$/;"	m	struct:pblk_g_ctx
+state	pblk.h	/^	int state;			\/* PBLK_LINESTATE_X *\/$/;"	m	struct:pblk_line
+state	pblk.h	/^	int state;			\/* pblk line state *\/$/;"	m	struct:pblk
+sub_writes	pblk.h	/^	atomic_long_t sub_writes;	\/* Sectors submitted from buffer *\/$/;"	m	struct:pblk
+subm	pblk.h	/^	unsigned int subm;		\/* Read offset - points to last entry$/;"	m	struct:pblk_rb
+sync	pblk.h	/^	atomic_t sync;			\/* Synced - backpointer that signals the$/;"	m	struct:pblk_emeta
+sync	pblk.h	/^	unsigned int sync;		\/* Synced - backpointer that signals$/;"	m	struct:pblk_rb
+sync_reads	pblk.h	/^	atomic_long_t sync_reads;	\/* Completed sector read requests *\/$/;"	m	struct:pblk
+sync_writes	pblk.h	/^	atomic_long_t sync_writes;	\/* Sectors synced to media *\/$/;"	m	struct:pblk
+sys_errors_attr	pblk-sysfs.c	/^static struct attribute sys_errors_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_flush_force	pblk-sysfs.c	/^static struct attribute sys_flush_force = {$/;"	v	typeref:struct:attribute	file:
+sys_gc_force	pblk-sysfs.c	/^static struct attribute sys_gc_force = {$/;"	v	typeref:struct:attribute	file:
+sys_gc_state	pblk-sysfs.c	/^static struct attribute sys_gc_state = {$/;"	v	typeref:struct:attribute	file:
+sys_lines_attr	pblk-sysfs.c	/^static struct attribute sys_lines_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_lines_info_attr	pblk-sysfs.c	/^static struct attribute sys_lines_info_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_max_sec_per_write	pblk-sysfs.c	/^static struct attribute sys_max_sec_per_write = {$/;"	v	typeref:struct:attribute	file:
+sys_padding_dist	pblk-sysfs.c	/^static struct attribute sys_padding_dist = {$/;"	v	typeref:struct:attribute	file:
+sys_rate_limiter_attr	pblk-sysfs.c	/^static struct attribute sys_rate_limiter_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_rb_attr	pblk-sysfs.c	/^static struct attribute sys_rb_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_stats_debug_attr	pblk-sysfs.c	/^static struct attribute sys_stats_debug_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_stats_ppaf_attr	pblk-sysfs.c	/^static struct attribute sys_stats_ppaf_attr = {$/;"	v	typeref:struct:attribute	file:
+sys_write_amp_mileage	pblk-sysfs.c	/^static struct attribute sys_write_amp_mileage = {$/;"	v	typeref:struct:attribute	file:
+sys_write_amp_trip	pblk-sysfs.c	/^static struct attribute sys_write_amp_trip = {$/;"	v	typeref:struct:attribute	file:
+sys_write_luns	pblk-sysfs.c	/^static struct attribute sys_write_luns = {$/;"	v	typeref:struct:attribute	file:
+t_seq_nr	pblk.h	/^	unsigned long t_seq_nr;     \/* Trans line unique sequence number *\/$/;"	m	struct:pblk_line_mgmt
+time_stamp	pblk.h	/^	unsigned long time_stamp;$/;"	m	struct:pblk_trans_entry
+total	pblk.h	/^	atomic64_t total;$/;"	m	struct:pblk_trans_ratio
+total_blocks	pblk.h	/^	unsigned long total_blocks;$/;"	m	struct:pblk_rl
+total_time	pblk.h	/^	u64 total_time;$/;"	m	struct:pblk
+trans_gc_value	pblk.h	/^	atomic_t trans_gc_value; \/* translation block gc value check *\/$/;"	m	struct:pblk_line
+trans_line	pblk.h	/^	struct pblk_line *trans_line; \/* Current Trans Line *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_line
+trans_lock	pblk.h	/^	spinlock_t trans_lock;$/;"	m	struct:pblk
+trans_lock	pblk.h	/^	spinlock_t trans_lock;$/;"	m	struct:pblk_line_mgmt
+trans_map	pblk.h	/^	unsigned char *trans_map;        \/* compatible type of the mapping table $/;"	m	struct:pblk_trans_cache
+trans_map	pblk.h	/^	unsigned char *trans_map;$/;"	m	struct:pblk
+trans_next	pblk.h	/^	struct pblk_line *trans_next; \/* Next trans line *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::pblk_line
+trans_op	pblk-trans-core.c	/^static struct pblk_trans_op trans_op = {$/;"	v	typeref:struct:pblk_trans_op	file:
+tt_pblk	pblk-init.c	/^static struct nvm_tgt_type tt_pblk = {$/;"	v	typeref:struct:nvm_tgt_type	file:
+type	pblk.h	/^	__le16 type;		\/* line type *\/$/;"	m	struct:line_header
+type	pblk.h	/^	int type;			\/* PBLK_LINETYPE_X *\/$/;"	m	struct:pblk_line
+type	pblk.h	/^	int type;$/;"	m	struct:pblk_update_item
+u_timer	pblk.h	/^	struct timer_list u_timer;$/;"	m	struct:pblk_rl	typeref:struct:pblk_rl::timer_list
+uaddrf	pblk.h	/^	struct pblk_addrf uaddrf;	\/* Unaligned address format *\/$/;"	m	struct:pblk	typeref:struct:pblk::pblk_addrf
+update_ts	pblk.h	/^	struct task_struct *update_ts;  \/* update task struct *\/$/;"	m	struct:pblk_trans_dir	typeref:struct:pblk_trans_dir::task_struct
+user	pblk.h	/^	__le64 user;		\/* Number of user written sectors *\/$/;"	m	struct:wa_counters
+user_rst_wa	pblk.h	/^	u64 user_rst_wa;$/;"	m	struct:pblk
+user_wa	pblk.h	/^	atomic64_t user_wa;		\/* Sectors written by user *\/$/;"	m	struct:pblk
+uuid	pblk.h	/^	__u8 uuid[16];		\/* instance uuid *\/$/;"	m	struct:line_header
+version_major	pblk.h	/^	__u8 version_major;	\/* version major *\/$/;"	m	struct:line_header
+version_minor	pblk.h	/^	__u8 version_minor;	\/* version minor *\/$/;"	m	struct:line_header
+victim_list	pblk.h	/^	struct list_head victim_list; \/* List for victim lines *\/$/;"	m	struct:pblk_line_mgmt	typeref:struct:pblk_line_mgmt::list_head
+vsc	pblk.h	/^	__le32 *vsc;			\/* Valid sector count in line *\/$/;"	m	struct:pblk_line
+vsc_list	pblk.h	/^	__le32 *vsc_list;		\/* Valid sector counts for all lines *\/$/;"	m	struct:pblk_line_mgmt
+vsc_list_len	pblk.h	/^	unsigned int vsc_list_len;	\/* Length for vsc list *\/$/;"	m	struct:pblk_line_meta
+w_ctx	pblk.h	/^	struct pblk_w_ctx w_ctx;	\/* Context for this entry *\/$/;"	m	struct:pblk_rb_entry	typeref:struct:pblk_rb_entry::pblk_w_ctx
+w_entries	pblk.h	/^	int w_entries;$/;"	m	struct:pblk_gc
+w_list	pblk.h	/^	struct list_head w_list;$/;"	m	struct:pblk_gc	typeref:struct:pblk_gc::list_head
+w_lock	pblk.h	/^	spinlock_t w_lock;		\/* Write lock *\/$/;"	m	struct:pblk_rb
+w_lock	pblk.h	/^	spinlock_t w_lock;$/;"	m	struct:pblk_gc
+w_rq_pool	pblk.h	/^	mempool_t *w_rq_pool;$/;"	m	struct:pblk
+wa_counters	pblk.h	/^struct wa_counters {$/;"	s
+wait	pblk.h	/^	struct completion wait;$/;"	m	struct:pblk_pad_rq	typeref:struct:pblk_pad_rq::completion
+window_wr_lun	pblk.h	/^	__le32 window_wr_lun;	\/* Number of parallel LUNs to write *\/$/;"	m	struct:line_emeta
+window_wr_lun	pblk.h	/^	__le32 window_wr_lun;	\/* Number of parallel LUNs to write *\/$/;"	m	struct:line_smeta
+wr_sem	pblk.h	/^	struct semaphore wr_sem;$/;"	m	struct:pblk_lun	typeref:struct:pblk_lun::semaphore
+write	pblk.h	/^	atomic64_t write;$/;"	m	struct:pblk_trans_ratio
+write	pblk.h	/^	int (*write) (struct pblk *, struct pblk_trans_entry *);$/;"	m	struct:pblk_trans_op
+write_failed	pblk.h	/^	atomic_long_t write_failed;$/;"	m	struct:pblk
+writer_ts	pblk.h	/^	struct task_struct *writer_ts;$/;"	m	struct:pblk	typeref:struct:pblk::task_struct
+ws	pblk.h	/^	struct work_struct ws;$/;"	m	struct:pblk_line_ws	typeref:struct:pblk_line_ws::work_struct
+ws_rec	pblk.h	/^	struct work_struct ws_rec;$/;"	m	struct:pblk_rec_ctx	typeref:struct:pblk_rec_ctx::work_struct
+wtimer	pblk.h	/^	struct timer_list wtimer;$/;"	m	struct:pblk	typeref:struct:pblk::timer_list

@@ -90,19 +90,76 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 
 int pblk_trans_bench_calculate(struct pblk *pblk)
 {
-	int bench;
-/*
-	if (PBLK_TRANS_CACHE_SIZE > 8) {
-		bench = PBLK_TRANS_CACHE_SIZE;
-		bench = bench >> 3; // 12.5% contents evict
-		bench = PBLK_TRANS_CACHE_SIZE - bench;
-	} else if (PBLK_TRANS_CACHE_SIZE > 3) {
-		bench = 2;
-	} else {
-		bench = 1;
+#if 0
+  // ORIGINAL BENCHMARK
+	struct pblk_trans_dir *dir = &pblk->dir;
+	unsigned long bench = dir->bench;
+	unsigned long time_stamp = dir->time_stamp;
+	unsigned long current_time = jiffies;
+	unsigned int before, after;
+	int gap, bias, prev_gap = dir->prev_gap;
+
+	if ( PBLK_TRANS_CACHE_SIZE <= 16 || time_after(time_stamp, current_time)) {
+		dir->time_stamp = current_time;
+		goto ret_bench;
 	}
-*/
+
+	/* update logic (ONLY SCALAR VALUE IN THIS PLACE!!!)*/
+	before = jiffies_to_msecs(time_stamp);
+	after = jiffies_to_msecs(current_time);
+
+	gap = after - before;
+	bias = bench >> 4;
+
+	if (gap > 5) {
+		if (prev_gap > gap) {
+			bench += bias;
+		} else {
+			bench -= bias;
+		}
 	bench = PBLK_TRANS_CACHE_SIZE - PBLK_TRANS_EVICT_SIZE;
+
+	/* update the global variable value */
+	dir->prev_gap = gap;
+	dir->time_stamp = current_time;
+	dir->bench = bench;
+
+ret_bench:
+	bench = dir->bench;
+	return bench;
+#endif
+  // NEW BENCHMARK
+	struct pblk_trans_dir *dir = &pblk->dir;
+	unsigned long bench = dir->bench;
+	u64 nr_read, nr_write;
+	int bias;
+
+	nr_read = atomic64_read(&dir->nr_read);
+	nr_write = atomic64_read(&dir->nr_write);
+
+	bias = bench >> 2; /* 25% */
+
+	if (nr_read > nr_write) {
+		bench -= bias;
+	} else {
+		bench += bias;
+	}
+
+	/* exception status check */
+	if (bench < PBLK_DEFAULT_BENCH_SIZE) {
+		bench = PBLK_DEFAULT_BENCH_SIZE;
+	}
+
+	if (bench >= PBLK_TRANS_CACHE_SIZE) {
+		bench = PBLK_TRANS_CACHE_SIZE - (PBLK_TRANS_CACHE_SIZE >> 4); /* 6.25% */
+	}
+
+	dir->bench = bench;
+
+	atomic64_set(&dir->nr_read, 0);
+	atomic64_set(&dir->nr_write, 0);
+
+	bench = dir->bench;
 
 	return bench;
 }

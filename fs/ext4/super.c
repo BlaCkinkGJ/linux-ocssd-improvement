@@ -4698,6 +4698,9 @@ static int ext4_commit_super(struct super_block *sb, int sync)
 	 * the clock is set in the future, and this will cause e2fsck
 	 * to complain and force a full file system check.
 	 */
+
+	sbh->content_type = PBLK_ITEM_TYPE_SUPERBLOCK;
+
 	if (!(sb->s_flags & SB_RDONLY))
 		es->s_wtime = cpu_to_le32(get_seconds());
 	if (sb->s_bdev->bd_part)

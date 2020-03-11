@@ -102,6 +102,7 @@ struct bio {
 	/*
 	 * 0: DATA TYPE
 	 * 1: JOURNAL TYPE
+	 * 2: METADATA TYPE
 	 */
 	unsigned int content_type;
 

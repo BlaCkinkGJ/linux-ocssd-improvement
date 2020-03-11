@@ -55,15 +55,30 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 			atomic_add(10, &entry->hot_ratio);
 			break;
 		case PBLK_ITEM_TYPE_JOURNAL:
-			atomic_add(10000, &entry->hot_ratio); 
-			//atomic_add(1000, &entry->hot_ratio); 
+		case PBLK_ITEM_TYPE_SUPERBLOCK:
+		case PBLK_ITEM_TYPE_DATA_BITMAP:
+		case PBLK_ITEM_TYPE_INODE_BITMAP:
+		case PBLK_ITEM_TYPE_INODE:
+		case PBLK_ITEM_TYPE_DIR:
+			atomic_add(500, &entry->hot_ratio); 
 			break;
 #endif
 		default:
 			atomic_inc(&entry->hot_ratio);
+			item.type = PBLK_ITEM_TYPE_UNKOWN;
 			break;
 	}
-	atomic64_inc(&pblk->nr_item[item.type]);
+
+  if (item.is_write) {
+		atomic_add(10, &entry->hot_ratio); 
+		atomic64_inc(&dir->nr_write);
+	} else {
+		atomic_add(50, &entry->hot_ratio); 
+		atomic64_inc(&dir->nr_read);
+	}
+
+
+	atomic_inc(&pblk->nr_content_type[item.type]);
 }
 
 #ifdef PBLK_CALC_THREAD_ENABLE
