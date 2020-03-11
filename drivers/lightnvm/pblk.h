@@ -55,7 +55,6 @@
 
 /* Static pool sizes */
 #define PBLK_GEN_WS_POOL_SIZE (2)
-
 #define PBLK_DEFAULT_OP (11)
 
 /* D-FTL setting */
@@ -65,6 +64,7 @@
 #define USER_DEFINED_BLOCK_SIZE \
 	(2 * DEVICE_MULTIPLY_VALUE) /* 64KB */ 
 #define PBLK_DEFAULT_BENCH_SIZE (PBLK_TRANS_CACHE_SIZE - (PBLK_TRANS_CACHE_SIZE >> 1)) /* 50% */
+
 /**
  * [FIO SETTING]
  *
@@ -77,6 +77,11 @@
  */
 
 /**
+ * 60 --> 4MB
+ * 90 --> 6MB
+ * 120 --> 8MB
+ * 180 --> 12MB
+ *
  * [Filebench SETTING]
  * webserver        => over          150
  * fileserver, oltp => approximately 100
@@ -84,7 +89,9 @@
  */
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
-#define PBLK_TRANS_CACHE_SIZE (100) /* count per BLOCK_SIZE */
+
+#define PBLK_TRANS_CACHE_SIZE (180) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_EVICT_SIZE (18) /* DEFAULT EVICT SIZE ==> 7*/
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
@@ -1630,4 +1637,32 @@ static inline void pblk_setup_uuid(struct pblk *pblk)
 	uuid_le_gen(&uuid);
 	memcpy(pblk->instance_uuid, uuid.b, 16);
 }
+
+///// pblk trans related functions /////
+static inline sector_t pblk_get_entry_id(sector_t lba, int shift_size)
+{
+	return (lba >> shift_size);
+}
+
+static inline sector_t pblk_get_entry_offset(sector_t lba, sector_t entry_id, int shift_size)
+{
+	return (lba - (entry_id * (1 << shift_size)));
+}
+
+static inline int pblk_trans_shift_size_get(sector_t size)
+{
+	int ret = 0;
+
+	while ((size = size >> 1)) {
+		ret++;
+	}
+
+	return ret;
+}
+
+static inline int pblk_trans_entry_shift_size(struct pblk *pblk)
+{
+	return (pblk->addrf_len < 32 ? 2 : 3);
+}
+
 #endif /* PBLK_H_ */

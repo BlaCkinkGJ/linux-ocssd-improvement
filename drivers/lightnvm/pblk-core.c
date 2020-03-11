@@ -1378,7 +1378,7 @@ retry:
 	spin_lock(&l_mg->free_lock);
 	retry_line = pblk_line_get(pblk);
 	if (!retry_line) {
-		l_mg->data_line = NULL;
+		l_mg->trans_line = NULL;
 		spin_unlock(&l_mg->free_lock);
 		return NULL;
 	}
@@ -1473,7 +1473,7 @@ struct pblk_line *pblk_line_get_first_trans(struct pblk *pblk)
 
 retry_setup:
 	if (!pblk_line_init_metadata(pblk, line, NULL)) {
-		line = pblk_line_retry(pblk, line);
+		line = pblk_line_trans_retry(pblk, line);
 		if (!line)
 			return NULL;
 

@@ -91,6 +91,7 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 int pblk_trans_bench_calculate(struct pblk *pblk)
 {
 #if 0
+  // ORIGINAL BENCHMARK
 	struct pblk_trans_dir *dir = &pblk->dir;
 	unsigned long bench = dir->bench;
 	unsigned long time_stamp = dir->time_stamp;
@@ -116,18 +117,7 @@ int pblk_trans_bench_calculate(struct pblk *pblk)
 		} else {
 			bench -= bias;
 		}
-	} else {
-		goto ret_bench;
-	}
-
-	/* exception status check */
-	if (bench < PBLK_DEFAULT_BENCH_SIZE) {
-		bench = PBLK_DEFAULT_BENCH_SIZE;
-	}
-
-	if (bench >= PBLK_TRANS_CACHE_SIZE) {
-		bench = PBLK_TRANS_CACHE_SIZE - 1;
-	}
+	bench = PBLK_TRANS_CACHE_SIZE - PBLK_TRANS_EVICT_SIZE;
 
 	/* update the global variable value */
 	dir->prev_gap = gap;
@@ -138,6 +128,7 @@ ret_bench:
 	bench = dir->bench;
 	return bench;
 #endif
+  // NEW BENCHMARK
 	struct pblk_trans_dir *dir = &pblk->dir;
 	unsigned long bench = dir->bench;
 	u64 nr_read, nr_write;

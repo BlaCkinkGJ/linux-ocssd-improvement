@@ -50,6 +50,7 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 	entry->time_stamp = jiffies;
 
 	switch(item.type) {
+#if 1
 		case PBLK_ITEM_TYPE_DATA:
 			atomic_add(10, &entry->hot_ratio);
 			break;
@@ -61,13 +62,14 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 		case PBLK_ITEM_TYPE_DIR:
 			atomic_add(500, &entry->hot_ratio); 
 			break;
+#endif
 		default:
 			atomic_inc(&entry->hot_ratio);
 			item.type = PBLK_ITEM_TYPE_UNKOWN;
 			break;
 	}
 
-	if (item.is_write) {
+  if (item.is_write) {
 		atomic_add(10, &entry->hot_ratio); 
 		atomic64_inc(&dir->nr_write);
 	} else {
