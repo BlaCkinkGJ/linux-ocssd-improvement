@@ -236,7 +236,7 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 {
 	struct pblk_line_meta *lm = &pblk->lm;
 	struct pblk_line *line = entry->line;
-	struct pblk_gc *gc = &pblk->gc;
+	// struct pblk_gc *gc = &pblk->gc;
 	struct pblk_trans_cache *cache = &pblk->cache;
 
 	int weight, bench;
@@ -258,8 +258,8 @@ static int ocssd_l2p_invalidate(struct pblk *pblk, struct pblk_trans_entry *entr
 
 	if (weight > bench) {
 		ocssd_l2p_add_to_gc(pblk, line);
-		gc->gc_enabled = 1;
-		pblk_gc_should_start(pblk);
+		// gc->gc_enabled = 1;
+		// pblk_gc_should_start(pblk);
 	}
 	return 0;
 }
@@ -286,8 +286,8 @@ int ocssd_l2p_write(struct pblk *pblk, struct pblk_trans_entry *entry)
 
 	// TODO: Must be enabled after you fix whole fucking system
 	// TODO: check the emeta and smeta location. That might be disturbed you.
-	// if (paddr != ADDR_EMPTY) 
-//		ret = ocssd_l2p_invalidate(pblk, entry, paddr);
+	if (paddr != ADDR_EMPTY) 
+		ret = ocssd_l2p_invalidate(pblk, entry, paddr);
 
 	if (ret)
 		goto fail_to_write;

@@ -160,6 +160,7 @@ static ssize_t pblk_sysfs_ppaf(struct pblk *pblk, char *page)
 	return sz;
 }
 
+#ifdef PBLK_SYSFS_JSON_LINES_TYPE
 static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
@@ -410,6 +411,7 @@ static ssize_t __pblk_sysfs_json_lines(struct pblk *pblk, char *page)
 	return sz;
 }
 
+#else
 static ssize_t __pblk_sysfs_original_lines(struct pblk *pblk, char *page)
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
@@ -634,12 +636,6 @@ static ssize_t __pblk_sysfs_original_lines(struct pblk *pblk, char *page)
 			weight = bitmap_weight(cache->free_bitmap, PBLK_TRANS_CACHE_SIZE);
 			percent = (weight*100)/total;
 
-			sz += snprintf(page+sz, PAGE_SIZE-sz,
-					"#### Current I/O Status ####\n"
-					"data: %lu\tjournal: %lu\n"
-					, atomic64_read(&pblk->nr_item[0])
-					, atomic64_read(&pblk->nr_item[1]));
-
 			sz += snprintf(page+sz, PAGE_SIZE - sz, 
 					"#### Cache Usage ####\n"
 					"[used]\t[total]\t[ratio]\n" 
@@ -657,8 +653,6 @@ static ssize_t __pblk_sysfs_original_lines(struct pblk *pblk, char *page)
 						"%s\t%lld\t%lld\t%lld\t%d\n",
 						c_str[i], hit[i], call[i], call[i] - hit[i], percent);
 			}
-#endif
-
 			if(PBLK_TRANS_CACHE_SIZE <= PAGE_SIZE-(sz+100)) { /* SHOW INTERNAL DISPATCH SETTING */
 				for(i = 0; i < PBLK_TRANS_CACHE_SIZE; i++)
 				{
@@ -678,10 +672,12 @@ static ssize_t __pblk_sysfs_original_lines(struct pblk *pblk, char *page)
 						"\n%s\n"
 						, bits);
 			}
+#endif
 		}
 	}
 	return sz;
 }
+#endif
 
 static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 {

@@ -147,8 +147,9 @@ int pblk_trans_init(struct pblk *pblk)
 	int ret;
 
 	dir->time_stamp = 0;
-	dir->bench = 0;
+	dir->bench = PBLK_TRANS_CACHE_SIZE - PBLK_TRANS_EVICT_SIZE;
 
+#if defined(PBLK_ORIGINAL_DYNAMIC_BENCHMARK) || defined(PBLK_DYNAMIC_BENCHMARK)
 	if (dir->time_stamp == 0 || dir->bench == 0) {
 		if (PBLK_TRANS_CACHE_SIZE > 16) {
 			dir->bench = PBLK_DEFAULT_BENCH_SIZE;
@@ -159,6 +160,7 @@ int pblk_trans_init(struct pblk *pblk)
 		} // end of if
 		dir->time_stamp = jiffies;
 	}
+#endif
 
 	dir->prev_gap = -1;
 

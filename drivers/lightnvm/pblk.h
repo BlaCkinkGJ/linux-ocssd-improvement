@@ -90,8 +90,9 @@
 
 #define PBLK_TRANS_BLOCK_SIZE (USER_DEFINED_BLOCK_SIZE) 
 
-#define PBLK_TRANS_CACHE_SIZE (180) /* count per BLOCK_SIZE */
-#define PBLK_TRANS_EVICT_SIZE (18) /* DEFAULT EVICT SIZE ==> 7*/
+/* PBLK BENCH SIZE is depends on under value*/
+#define PBLK_TRANS_CACHE_SIZE (2000) /* count per BLOCK_SIZE */
+#define PBLK_TRANS_EVICT_SIZE (100) /* divide by 10 is optimal*/
 
 #define PBLK_TRANS_SHIFT_SIZE (12) /* 4096 = 2^12 */
 
@@ -102,6 +103,7 @@
 
 #define PBLK_TRANS_EVICT_MSECS 1000
 #define PBLK_SYSFS_JSON_LINES_TYPE
+#define PBLK_USE_META_SEPERATION
 
 enum {
 	PBLK_READ		= READ,

@@ -50,7 +50,7 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 	entry->time_stamp = jiffies;
 
 	switch(item.type) {
-#if 1
+#ifdef PBLK_USE_META_SEPERATION
 		case PBLK_ITEM_TYPE_DATA:
 			atomic_add(10, &entry->hot_ratio);
 			break;
@@ -69,7 +69,7 @@ void pblk_trans_do_calc(struct pblk *pblk, struct pblk_update_item item)
 			break;
 	}
 
-  if (item.is_write) {
+    if (item.is_write) {
 		atomic_add(10, &entry->hot_ratio); 
 		atomic64_inc(&dir->nr_write);
 	} else {

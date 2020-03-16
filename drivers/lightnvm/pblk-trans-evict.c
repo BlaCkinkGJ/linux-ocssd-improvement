@@ -90,9 +90,9 @@ static int __pblk_trans_evict_run(struct pblk *pblk)
 
 int pblk_trans_bench_calculate(struct pblk *pblk)
 {
-#if 0
-  // ORIGINAL BENCHMARK
 	struct pblk_trans_dir *dir = &pblk->dir;
+#ifdef PBLK_ORIGINAL_DYNAMIC_BENCHMARK 
+  // ORIGINAL BENCHMARK
 	unsigned long bench = dir->bench;
 	unsigned long time_stamp = dir->time_stamp;
 	unsigned long current_time = jiffies;
@@ -117,7 +117,7 @@ int pblk_trans_bench_calculate(struct pblk *pblk)
 		} else {
 			bench -= bias;
 		}
-	bench = PBLK_TRANS_CACHE_SIZE - PBLK_TRANS_EVICT_SIZE;
+	}
 
 	/* update the global variable value */
 	dir->prev_gap = gap;
@@ -127,9 +127,9 @@ int pblk_trans_bench_calculate(struct pblk *pblk)
 ret_bench:
 	bench = dir->bench;
 	return bench;
-#endif
+#endif // end of PBLK_ORIGINAL_DYNAMIC_BENCHMARK
+#ifdef PBLK_DYNAMIC_BENCHMARK
   // NEW BENCHMARK
-	struct pblk_trans_dir *dir = &pblk->dir;
 	unsigned long bench = dir->bench;
 	u64 nr_read, nr_write;
 	int bias;
@@ -162,6 +162,8 @@ ret_bench:
 	bench = dir->bench;
 
 	return bench;
+#endif // end of PBLK_DYNAMIC_BENCHMARK
+	return dir->bench;
 }
 
 void pblk_trans_evict_run(struct pblk *pblk, int bench)

@@ -127,3 +127,7 @@ all.config
 
 # Kdevelop4
 *.kdev4
+
+# misc
+Doxyfile
+
