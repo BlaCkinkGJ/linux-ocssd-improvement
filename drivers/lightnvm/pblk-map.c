@@ -88,7 +88,7 @@ void pblk_map_rq(struct pblk *pblk, struct nvm_rq *rqd, unsigned int sentry,
 	for (i = off; i < rqd->nr_ppas; i += min) {
 		map_secs = (i + min > valid_secs) ? (valid_secs % min) : min;
 		pblk_map_page_data(pblk, sentry + i, &rqd->ppa_list[i],
-					lun_bitmap, &meta_list[i], map_secs);
+				   lun_bitmap, &meta_list[i], map_secs);
 	}
 }
 
@@ -109,7 +109,7 @@ void pblk_map_erase_rq(struct pblk *pblk, struct nvm_rq *rqd,
 	for (i = 0; i < rqd->nr_ppas; i += min) {
 		map_secs = (i + min > valid_secs) ? (valid_secs % min) : min;
 		pblk_map_page_data(pblk, sentry + i, &rqd->ppa_list[i],
-					lun_bitmap, &meta_list[i], map_secs);
+				   lun_bitmap, &meta_list[i], map_secs);
 
 		erase_lun = pblk_ppa_to_pos(geo, rqd->ppa_list[i]);
 
@@ -119,7 +119,7 @@ void pblk_map_erase_rq(struct pblk *pblk, struct nvm_rq *rqd,
 		e_line = pblk_line_get_erase(pblk);
 		if (!e_line)
 			return pblk_map_rq(pblk, rqd, sentry, lun_bitmap,
-							valid_secs, i + min);
+					   valid_secs, i + min);
 
 		spin_lock(&e_line->lock);
 		if (!test_bit(erase_lun, e_line->erase_bitmap)) {
@@ -133,7 +133,7 @@ void pblk_map_erase_rq(struct pblk *pblk, struct nvm_rq *rqd,
 
 			/* Avoid evaluating e_line->left_eblks */
 			return pblk_map_rq(pblk, rqd, sentry, lun_bitmap,
-							valid_secs, i + min);
+					   valid_secs, i + min);
 		}
 		spin_unlock(&e_line->lock);
 	}
@@ -149,12 +149,12 @@ void pblk_map_erase_rq(struct pblk *pblk, struct nvm_rq *rqd,
 
 	/* Erase blocks that are bad in this line but might not be in next */
 	if (unlikely(pblk_ppa_empty(*erase_ppa)) &&
-			bitmap_weight(d_line->blk_bitmap, lm->blk_per_line)) {
+	    bitmap_weight(d_line->blk_bitmap, lm->blk_per_line)) {
 		int bit = -1;
 
-retry:
-		bit = find_next_bit(d_line->blk_bitmap,
-						lm->blk_per_line, bit + 1);
+	retry:
+		bit = find_next_bit(d_line->blk_bitmap, lm->blk_per_line,
+				    bit + 1);
 		if (bit >= lm->blk_per_line)
 			return;
 

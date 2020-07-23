@@ -49,7 +49,7 @@ static struct nvm_target *nvm_find_target(struct nvm_dev *dev, const char *name)
 {
 	struct nvm_target *tgt;
 
-	list_for_each_entry(tgt, &dev->targets, list)
+	list_for_each_entry (tgt, &dev->targets, list)
 		if (!strcmp(name, tgt->disk->disk_name))
 			return tgt;
 
@@ -63,9 +63,9 @@ static bool nvm_target_exists(const char *name)
 	bool ret = false;
 
 	down_write(&nvm_lock);
-	list_for_each_entry(dev, &nvm_devices, devices) {
+	list_for_each_entry (dev, &nvm_devices, devices) {
 		mutex_lock(&dev->mlock);
-		list_for_each_entry(tgt, &dev->targets, list) {
+		list_for_each_entry (tgt, &dev->targets, list) {
 			if (!strcmp(name, tgt->disk->disk_name)) {
 				ret = true;
 				mutex_unlock(&dev->mlock);
@@ -125,7 +125,7 @@ static void nvm_remove_tgt_dev(struct nvm_tgt_dev *tgt_dev, int clear)
 				int lunid = (ch * dev->geo.num_lun) + lun;
 
 				WARN_ON(!test_and_clear_bit(lunid,
-							dev->lun_map));
+							    dev->lun_map));
 			}
 		}
 
@@ -139,9 +139,8 @@ static void nvm_remove_tgt_dev(struct nvm_tgt_dev *tgt_dev, int clear)
 	kfree(tgt_dev);
 }
 
-static struct nvm_tgt_dev *nvm_create_tgt_dev(struct nvm_dev *dev,
-					      u16 lun_begin, u16 lun_end,
-					      u16 op)
+static struct nvm_tgt_dev *
+nvm_create_tgt_dev(struct nvm_dev *dev, u16 lun_begin, u16 lun_end, u16 op)
 {
 	struct nvm_tgt_dev *tgt_dev = NULL;
 	struct nvm_dev_map *dev_rmap = dev->rmap;
@@ -172,15 +171,16 @@ static struct nvm_tgt_dev *nvm_create_tgt_dev(struct nvm_dev *dev,
 	if (!luns)
 		goto err_luns;
 
-	prev_num_lun = (luns_left > dev->geo.num_lun) ?
-					dev->geo.num_lun : luns_left;
+	prev_num_lun =
+		(luns_left > dev->geo.num_lun) ? dev->geo.num_lun : luns_left;
 	for (i = 0; i < num_ch; i++) {
 		struct nvm_ch_map *ch_rmap = &dev_rmap->chnls[i + bch];
 		int *lun_roffs = ch_rmap->lun_offs;
 		struct nvm_ch_map *ch_map = &dev_map->chnls[i];
 		int *lun_offs;
 		int luns_in_chnl = (luns_left > dev->geo.num_lun) ?
-					dev->geo.num_lun : luns_left;
+					   dev->geo.num_lun :
+					   luns_left;
 
 		if (lun_balanced && prev_num_lun != luns_in_chnl)
 			lun_balanced = 0;
@@ -247,14 +247,14 @@ err_dev:
 }
 
 static const struct block_device_operations nvm_fops = {
-	.owner		= THIS_MODULE,
+	.owner = THIS_MODULE,
 };
 
 static struct nvm_tgt_type *__nvm_find_target_type(const char *name)
 {
 	struct nvm_tgt_type *tt;
 
-	list_for_each_entry(tt, &nvm_tgt_types, list)
+	list_for_each_entry (tt, &nvm_tgt_types, list)
 		if (!strcmp(name, tt->name))
 			return tt;
 
@@ -276,8 +276,8 @@ static int nvm_config_check_luns(struct nvm_geo *geo, int lun_begin,
 				 int lun_end)
 {
 	if (lun_begin > lun_end || lun_end >= geo->all_luns) {
-		pr_err("nvm: lun out of bound (%u:%u > %u)\n",
-			lun_begin, lun_end, geo->all_luns - 1);
+		pr_err("nvm: lun out of bound (%u:%u > %u)\n", lun_begin,
+		       lun_end, geo->all_luns - 1);
 		return -EINVAL;
 	}
 
@@ -357,7 +357,7 @@ static int nvm_create_tgt(struct nvm_dev *dev, struct nvm_ioctl_create *create)
 
 	if (nvm_target_exists(create->tgtname)) {
 		pr_err("nvm: target name already exists (%s)\n",
-							create->tgtname);
+		       create->tgtname);
 		return -EINVAL;
 	}
 
@@ -407,8 +407,7 @@ static int nvm_create_tgt(struct nvm_dev *dev, struct nvm_ioctl_create *create)
 	tdisk->private_data = targetdata;
 	tqueue->queuedata = targetdata;
 
-	blk_queue_max_hw_sectors(tqueue,
-			(dev->geo.csecs >> 9) * NVM_MAX_VLBA);
+	blk_queue_max_hw_sectors(tqueue, (dev->geo.csecs >> 9) * NVM_MAX_VLBA);
 
 	set_capacity(tdisk, tt->capacity(targetdata));
 	add_disk(tdisk);
@@ -504,8 +503,8 @@ static int nvm_register_map(struct nvm_dev *dev)
 	if (!rmap)
 		goto err_rmap;
 
-	rmap->chnls = kcalloc(dev->geo.num_ch, sizeof(struct nvm_ch_map),
-								GFP_KERNEL);
+	rmap->chnls =
+		kcalloc(dev->geo.num_ch, sizeof(struct nvm_ch_map), GFP_KERNEL);
 	if (!rmap->chnls)
 		goto err_chnls;
 
@@ -575,7 +574,7 @@ static void nvm_map_to_tgt(struct nvm_tgt_dev *tgt_dev, struct ppa_addr *p)
 }
 
 static void nvm_ppa_tgt_to_dev(struct nvm_tgt_dev *tgt_dev,
-				struct ppa_addr *ppa_list, int nr_ppas)
+			       struct ppa_addr *ppa_list, int nr_ppas)
 {
 	int i;
 
@@ -586,7 +585,7 @@ static void nvm_ppa_tgt_to_dev(struct nvm_tgt_dev *tgt_dev,
 }
 
 static void nvm_ppa_dev_to_tgt(struct nvm_tgt_dev *tgt_dev,
-				struct ppa_addr *ppa_list, int nr_ppas)
+			       struct ppa_addr *ppa_list, int nr_ppas)
 {
 	int i;
 
@@ -643,10 +642,10 @@ void nvm_unregister_tgt_type(struct nvm_tgt_type *tt)
 EXPORT_SYMBOL(nvm_unregister_tgt_type);
 
 void *nvm_dev_dma_alloc(struct nvm_dev *dev, gfp_t mem_flags,
-							dma_addr_t *dma_handler)
+			dma_addr_t *dma_handler)
 {
 	return dev->ops->dev_dma_alloc(dev, dev->dma_pool, mem_flags,
-								dma_handler);
+				       dma_handler);
 }
 EXPORT_SYMBOL(nvm_dev_dma_alloc);
 
@@ -660,7 +659,7 @@ static struct nvm_dev *nvm_find_nvm_dev(const char *name)
 {
 	struct nvm_dev *dev;
 
-	list_for_each_entry(dev, &nvm_devices, devices)
+	list_for_each_entry (dev, &nvm_devices, devices)
 		if (!strcmp(name, dev->name))
 			return dev;
 
@@ -668,7 +667,7 @@ static struct nvm_dev *nvm_find_nvm_dev(const char *name)
 }
 
 static int nvm_set_rqd_ppalist(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd,
-			const struct ppa_addr *ppas, int nr_ppas)
+			       const struct ppa_addr *ppas, int nr_ppas)
 {
 	struct nvm_dev *dev = tgt_dev->parent;
 	struct nvm_geo *geo = &tgt_dev->geo;
@@ -704,7 +703,7 @@ static int nvm_set_rqd_ppalist(struct nvm_tgt_dev *tgt_dev, struct nvm_rq *rqd,
 }
 
 static void nvm_free_rqd_ppalist(struct nvm_tgt_dev *tgt_dev,
-			struct nvm_rq *rqd)
+				 struct nvm_rq *rqd)
 {
 	if (!rqd->ppa_list)
 		return;
@@ -713,14 +712,14 @@ static void nvm_free_rqd_ppalist(struct nvm_tgt_dev *tgt_dev,
 }
 
 int nvm_get_chunk_meta(struct nvm_tgt_dev *tgt_dev, struct nvm_chk_meta *meta,
-		struct ppa_addr ppa, int nchks)
+		       struct ppa_addr ppa, int nchks)
 {
 	struct nvm_dev *dev = tgt_dev->parent;
 
 	nvm_ppa_tgt_to_dev(tgt_dev, &ppa, 1);
 
-	return dev->ops->get_chk_meta(tgt_dev->parent, meta,
-						(sector_t)ppa.ppa, nchks);
+	return dev->ops->get_chk_meta(tgt_dev->parent, meta, (sector_t)ppa.ppa,
+				      nchks);
 }
 EXPORT_SYMBOL(nvm_get_chunk_meta);
 
@@ -828,7 +827,7 @@ int nvm_bb_tbl_fold(struct nvm_dev *dev, u8 *blks, int nr_blks)
 		/* Bad blocks on any planes take precedence over other types */
 		for (pl = 0; pl < geo->pln_mode; pl++) {
 			if (blks[offset + pl] &
-					(NVM_BLK_T_BAD|NVM_BLK_T_GRWN_BAD)) {
+			    (NVM_BLK_T_BAD | NVM_BLK_T_GRWN_BAD)) {
 				blktype = blks[offset + pl];
 				break;
 			}
@@ -858,7 +857,7 @@ static int nvm_core_init(struct nvm_dev *dev)
 	int ret;
 
 	dev->lun_map = kcalloc(BITS_TO_LONGS(geo->all_luns),
-					sizeof(unsigned long), GFP_KERNEL);
+			       sizeof(unsigned long), GFP_KERNEL);
 	if (!dev->lun_map)
 		return -ENOMEM;
 
@@ -900,9 +899,8 @@ static int nvm_init(struct nvm_dev *dev)
 		goto err;
 	}
 
-	pr_debug("nvm: ver:%u.%u nvm_vendor:%x\n",
-				geo->major_ver_id, geo->minor_ver_id,
-				geo->vmnt);
+	pr_debug("nvm: ver:%u.%u nvm_vendor:%x\n", geo->major_ver_id,
+		 geo->minor_ver_id, geo->vmnt);
 
 	ret = nvm_core_init(dev);
 	if (ret) {
@@ -910,10 +908,9 @@ static int nvm_init(struct nvm_dev *dev)
 		goto err;
 	}
 
-	pr_info("nvm: registered %s [%u/%u/%u/%u/%u]\n",
-			dev->name, dev->geo.ws_min, dev->geo.ws_opt,
-			dev->geo.num_chk, dev->geo.all_luns,
-			dev->geo.num_ch);
+	pr_info("nvm: registered %s [%u/%u/%u/%u/%u]\n", dev->name,
+		dev->geo.ws_min, dev->geo.ws_opt, dev->geo.num_chk,
+		dev->geo.all_luns, dev->geo.num_ch);
 	return 0;
 err:
 	pr_err("nvm: failed to initialize nvm\n");
@@ -960,7 +957,7 @@ void nvm_unregister(struct nvm_dev *dev)
 	struct nvm_target *t, *tmp;
 
 	mutex_lock(&dev->mlock);
-	list_for_each_entry_safe(t, tmp, &dev->targets, list) {
+	list_for_each_entry_safe (t, tmp, &dev->targets, list) {
 		if (t->dev->parent != dev)
 			continue;
 		__nvm_remove_target(t);
@@ -1006,7 +1003,7 @@ static long nvm_ioctl_info(struct file *file, void __user *arg)
 	info->version[2] = NVM_VERSION_PATCH;
 
 	down_write(&nvm_tgtt_lock);
-	list_for_each_entry(tt, &nvm_tgt_types, list) {
+	list_for_each_entry (tt, &nvm_tgt_types, list) {
 		struct nvm_ioctl_info_tgt *tgt = &info->tgts[tgt_iter];
 
 		tgt->version[0] = tt->version[0];
@@ -1040,7 +1037,7 @@ static long nvm_ioctl_get_devices(struct file *file, void __user *arg)
 		return -ENOMEM;
 
 	down_write(&nvm_lock);
-	list_for_each_entry(dev, &nvm_devices, devices) {
+	list_for_each_entry (dev, &nvm_devices, devices) {
 		struct nvm_ioctl_device_info *info = &devices->info[i];
 
 		strlcpy(info->devname, dev->name, sizeof(info->devname));
@@ -1061,8 +1058,7 @@ static long nvm_ioctl_get_devices(struct file *file, void __user *arg)
 
 	devices->nr_devices = i;
 
-	if (copy_to_user(arg, devices,
-			 sizeof(struct nvm_ioctl_get_devices))) {
+	if (copy_to_user(arg, devices, sizeof(struct nvm_ioctl_get_devices))) {
 		kfree(devices);
 		return -EFAULT;
 	}
@@ -1120,7 +1116,7 @@ static long nvm_ioctl_dev_remove(struct file *file, void __user *arg)
 		return -EINVAL;
 	}
 
-	list_for_each_entry(dev, &nvm_devices, devices) {
+	list_for_each_entry (dev, &nvm_devices, devices) {
 		ret = nvm_remove_tgt(dev, &remove);
 		if (!ret)
 			break;
@@ -1189,13 +1185,13 @@ static const struct file_operations _ctl_fops = {
 	.open = nonseekable_open,
 	.unlocked_ioctl = nvm_ctl_ioctl,
 	.owner = THIS_MODULE,
-	.llseek  = noop_llseek,
+	.llseek = noop_llseek,
 };
 
 static struct miscdevice _nvm_misc = {
-	.minor		= MISC_DYNAMIC_MINOR,
-	.name		= "lightnvm",
-	.nodename	= "lightnvm/control",
-	.fops		= &_ctl_fops,
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "lightnvm",
+	.nodename = "lightnvm/control",
+	.fops = &_ctl_fops,
 };
 builtin_misc_device(_nvm_misc);

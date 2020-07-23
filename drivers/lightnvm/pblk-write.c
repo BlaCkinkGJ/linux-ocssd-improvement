@@ -49,7 +49,7 @@ static unsigned long pblk_end_w_bio(struct pblk *pblk, struct nvm_rq *rqd,
 
 	if (c_ctx->nr_padded)
 		pblk_bio_free_pages(pblk, rqd->bio, c_ctx->nr_valid,
-							c_ctx->nr_padded);
+				    c_ctx->nr_padded);
 
 #ifdef CONFIG_NVM_DEBUG
 	atomic_long_add(rqd->nr_ppas, &pblk->sync_writes);
@@ -88,8 +88,8 @@ static void pblk_complete_write(struct pblk *pblk, struct nvm_rq *rqd,
 	if (pos == c_ctx->sentry) {
 		pos = pblk_end_w_bio(pblk, rqd, c_ctx);
 
-retry:
-		list_for_each_entry_safe(c, r, &pblk->compl_list, list) {
+	retry:
+		list_for_each_entry_safe (c, r, &pblk->compl_list, list) {
 			rqd = nvm_rq_from_c_ctx(c);
 			if (c->sentry == pos) {
 				pos = pblk_end_queued_w_bio(pblk, rqd, c);
@@ -203,7 +203,7 @@ static void pblk_end_io_write_meta(struct nvm_rq *rqd)
 	sync = atomic_add_return(rqd->nr_ppas, &emeta->sync);
 	if (sync == emeta->nr_entries)
 		pblk_gen_run_ws(pblk, line, NULL, pblk_line_close_ws,
-						GFP_ATOMIC, pblk->close_wq);
+				GFP_ATOMIC, pblk->close_wq);
 
 	pblk_free_rqd(pblk, rqd, PBLK_WRITE_INT);
 
@@ -211,8 +211,7 @@ static void pblk_end_io_write_meta(struct nvm_rq *rqd)
 }
 
 static int pblk_alloc_w_rq(struct pblk *pblk, struct nvm_rq *rqd,
-			   unsigned int nr_secs,
-			   nvm_end_io_fn(*end_io))
+			   unsigned int nr_secs, nvm_end_io_fn(*end_io))
 {
 	struct nvm_tgt_dev *dev = pblk->dev;
 
@@ -223,8 +222,8 @@ static int pblk_alloc_w_rq(struct pblk *pblk, struct nvm_rq *rqd,
 	rqd->private = pblk;
 	rqd->end_io = end_io;
 
-	rqd->meta_list = nvm_dev_dma_alloc(dev->parent, GFP_KERNEL,
-							&rqd->dma_meta_list);
+	rqd->meta_list =
+		nvm_dev_dma_alloc(dev->parent, GFP_KERNEL, &rqd->dma_meta_list);
 	if (!rqd->meta_list)
 		return -ENOMEM;
 
@@ -260,8 +259,8 @@ static int pblk_setup_w_rq(struct pblk *pblk, struct nvm_rq *rqd,
 	if (likely(!e_line || !atomic_read(&e_line->left_eblks)))
 		pblk_map_rq(pblk, rqd, c_ctx->sentry, lun_bitmap, valid, 0);
 	else
-		pblk_map_erase_rq(pblk, rqd, c_ctx->sentry, lun_bitmap,
-							valid, erase_ppa);
+		pblk_map_erase_rq(pblk, rqd, c_ctx->sentry, lun_bitmap, valid,
+				  erase_ppa);
 
 	return 0;
 }
@@ -299,11 +298,10 @@ static int pblk_calc_secs_to_sync(struct pblk *pblk, unsigned int secs_avail,
 	secs_to_sync = pblk_calc_secs(pblk, secs_avail, secs_to_flush);
 
 #ifdef CONFIG_NVM_DEBUG
-	if ((!secs_to_sync && secs_to_flush)
-			|| (secs_to_sync < 0)
-			|| (secs_to_sync > secs_avail && !secs_to_flush)) {
+	if ((!secs_to_sync && secs_to_flush) || (secs_to_sync < 0) ||
+	    (secs_to_sync > secs_avail && !secs_to_flush)) {
 		pr_err("pblk: bad sector calculation (a:%d,s:%d,f:%d)\n",
-				secs_avail, secs_to_sync, secs_to_flush);
+		       secs_avail, secs_to_sync, secs_to_flush);
 	}
 #endif
 
@@ -337,7 +335,7 @@ int pblk_submit_meta_io(struct pblk *pblk, struct pblk_line *meta_line)
 	data = ((void *)emeta->buf) + emeta->mem;
 
 	bio = pblk_bio_map_addr(pblk, data, rq_ppas, rq_len,
-					l_mg->emeta_alloc_type, GFP_KERNEL);
+				l_mg->emeta_alloc_type, GFP_KERNEL);
 	if (IS_ERR(bio)) {
 		ret = PTR_ERR(bio);
 		goto fail_free_rqd;
@@ -350,7 +348,7 @@ int pblk_submit_meta_io(struct pblk *pblk, struct pblk_line *meta_line)
 	if (ret)
 		goto fail_free_bio;
 
-	for (i = 0; i < rqd->nr_ppas; ) {
+	for (i = 0; i < rqd->nr_ppas;) {
 		spin_lock(&meta_line->lock);
 		paddr = __pblk_alloc_page(pblk, meta_line, rq_ppas);
 		spin_unlock(&meta_line->lock);
@@ -415,7 +413,7 @@ static inline bool pblk_valid_meta_ppa(struct pblk *pblk,
 	pos_opt = pblk_ppa_to_pos(geo, ppa_opt);
 
 	if (test_bit(pos_opt, data_c_ctx->lun_bitmap) ||
-				test_bit(pos_opt, data_line->blk_bitmap))
+	    test_bit(pos_opt, data_line->blk_bitmap))
 		return true;
 
 	if (unlikely(pblk_ppa_comp(ppa_opt, ppa)))
@@ -505,7 +503,7 @@ static void pblk_free_write_rqd(struct pblk *pblk, struct nvm_rq *rqd)
 
 	if (c_ctx->nr_padded)
 		pblk_bio_free_pages(pblk, bio, c_ctx->nr_valid,
-							c_ctx->nr_padded);
+				    c_ctx->nr_padded);
 }
 
 static int pblk_submit_write(struct pblk *pblk)
@@ -545,7 +543,7 @@ static int pblk_submit_write(struct pblk *pblk)
 	rqd->bio = bio;
 
 	if (pblk_rb_read_to_bio(&pblk->rwb, rqd, pos, secs_to_sync,
-								secs_avail)) {
+				secs_avail)) {
 		pr_err("pblk: corrupted write bio\n");
 		goto fail_put_bio;
 	}

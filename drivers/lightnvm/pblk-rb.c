@@ -27,7 +27,7 @@ void pblk_rb_data_free(struct pblk_rb *rb)
 	struct pblk_rb_pages *p, *t;
 
 	down_write(&pblk_rb_lock);
-	list_for_each_entry_safe(p, t, &rb->pages, list) {
+	list_for_each_entry_safe (p, t, &rb->pages, list) {
 		free_pages((unsigned long)page_address(p->pages), p->order);
 		list_del(&p->list);
 		kfree(p);
@@ -142,10 +142,12 @@ static void clean_wctx(struct pblk_w_ctx *w_ctx)
 {
 	int flags;
 
-try:
-	flags = READ_ONCE(w_ctx->flags);
+	try : flags
+		= READ_ONCE(w_ctx->flags);
 	if (!(flags & PBLK_SUBMITTED_ENTRY))
-		goto try;
+		goto
+		try
+			;
 
 	/* Release flags on context. Protect from writes and reads */
 	smp_store_release(&w_ctx->flags, PBLK_WRITABLE_ENTRY);
@@ -154,8 +156,7 @@ try:
 }
 
 #define pblk_rb_ring_count(head, tail, size) CIRC_CNT(head, tail, size)
-#define pblk_rb_ring_space(rb, head, tail, size) \
-					(CIRC_SPACE(head, tail, size))
+#define pblk_rb_ring_space(rb, head, tail, size) (CIRC_SPACE(head, tail, size))
 
 /*
  * Buffer space is calculated with respect to the back pointer signaling
@@ -196,7 +197,7 @@ unsigned int pblk_rb_read_commit(struct pblk_rb *rb, unsigned int nr_entries)
 	subm = READ_ONCE(rb->subm);
 	/* Commit read means updating submission pointer */
 	smp_store_release(&rb->subm,
-				(subm + nr_entries) & (rb->nr_entries - 1));
+			  (subm + nr_entries) & (rb->nr_entries - 1));
 
 	return subm;
 }
@@ -224,7 +225,7 @@ static int __pblk_rb_update_l2p(struct pblk_rb *rb, unsigned int to_update)
 			WARN(1, "pblk: unknown IO type\n");
 
 		pblk_update_map_dev(pblk, w_ctx->lba, w_ctx->ppa,
-							entry->cacheline);
+				    entry->cacheline);
 
 		line = &pblk->lines[pblk_ppa_to_line(w_ctx->ppa)];
 		kref_put(&line->ref, pblk_line_put);
@@ -350,7 +351,7 @@ void pblk_rb_write_entry_gc(struct pblk_rb *rb, void *data,
 }
 
 static int pblk_rb_flush_point_set(struct pblk_rb *rb, struct bio *bio,
-				  unsigned int pos)
+				   unsigned int pos)
 {
 	struct pblk_rb_entry *entry;
 	unsigned int sync, flush_point;
@@ -508,15 +509,14 @@ int pblk_rb_may_write_gc(struct pblk_rb *rb, unsigned int nr_entries,
  * overwrite the entries passed on the list.
  */
 unsigned int pblk_rb_read_to_bio_list(struct pblk_rb *rb, struct bio *bio,
-				      struct list_head *list,
-				      unsigned int max)
+				      struct list_head *list, unsigned int max)
 {
 	struct pblk_rb_entry *entry, *tentry;
 	struct page *page;
 	unsigned int read = 0;
 	int ret;
 
-	list_for_each_entry_safe(entry, tentry, list, index) {
+	list_for_each_entry_safe (entry, tentry, list, index) {
 		if (read > max) {
 			pr_err("pblk: too many entries on list\n");
 			goto out;
@@ -578,11 +578,13 @@ unsigned int pblk_rb_read_to_bio(struct pblk_rb *rb, struct nvm_rq *rqd,
 		/* A write has been allowed into the buffer, but data is still
 		 * being copied to it. It is ok to busy wait.
 		 */
-try:
-		flags = READ_ONCE(entry->w_ctx.flags);
+		try : flags
+			= READ_ONCE(entry->w_ctx.flags);
 		if (!(flags & PBLK_WRITTEN_DATA)) {
 			io_schedule();
-			goto try;
+			goto
+			try
+				;
 		}
 
 		page = virt_to_page(entry->data);
@@ -596,7 +598,7 @@ try:
 		}
 
 		if (bio_add_pc_page(q, bio, page, rb->seg_size, 0) !=
-								rb->seg_size) {
+		    rb->seg_size) {
 			pr_err("pblk: could not add page to write bio\n");
 			flags &= ~PBLK_WRITTEN_DATA;
 			flags |= PBLK_SUBMITTED_ENTRY;
@@ -652,7 +654,6 @@ int pblk_rb_copy_to_bio(struct pblk_rb *rb, struct bio *bio, sector_t lba,
 	int flags;
 	int ret = 1;
 
-
 #ifdef CONFIG_NVM_DEBUG
 	/* Caller must ensure that the access will not cause an overflow */
 	BUG_ON(pos >= rb->nr_entries);
@@ -668,7 +669,7 @@ int pblk_rb_copy_to_bio(struct pblk_rb *rb, struct bio *bio, sector_t lba,
 
 	/* Check if the entry has been overwritten or is scheduled to be */
 	if (!pblk_ppa_comp(l2p_ppa, ppa) || w_ctx->lba != lba ||
-						flags & PBLK_WRITABLE_ENTRY) {
+	    flags & PBLK_WRITABLE_ENTRY) {
 		ret = 0;
 		goto out;
 	}
@@ -729,8 +730,8 @@ unsigned int pblk_rb_sync_advance(struct pblk_rb *rb, unsigned int nr_entries)
 	if (flush_point != EMPTY_ENTRY) {
 		unsigned int secs_to_flush;
 
-		secs_to_flush = pblk_rb_ring_count(flush_point, sync,
-					rb->nr_entries);
+		secs_to_flush =
+			pblk_rb_ring_count(flush_point, sync, rb->nr_entries);
 		if (secs_to_flush < nr_entries) {
 			/* Protect flush points */
 			smp_store_release(&rb->flush_point, EMPTY_ENTRY);
@@ -804,8 +805,7 @@ int pblk_rb_tear_down_check(struct pblk_rb *rb)
 	spin_lock_irq(&rb->s_lock);
 
 	if ((rb->mem == rb->subm) && (rb->subm == rb->sync) &&
-				(rb->sync == rb->l2p_update) &&
-				(rb->flush_point == EMPTY_ENTRY)) {
+	    (rb->sync == rb->l2p_update) && (rb->flush_point == EMPTY_ENTRY)) {
 		goto out;
 	}
 
@@ -848,45 +848,37 @@ ssize_t pblk_rb_sysfs(struct pblk_rb *rb, char *buf)
 	int queued_entries = 0;
 
 	spin_lock_irq(&rb->s_lock);
-	list_for_each_entry(c, &pblk->compl_list, list)
+	list_for_each_entry (c, &pblk->compl_list, list)
 		queued_entries++;
 	spin_unlock_irq(&rb->s_lock);
 
 	if (rb->flush_point != EMPTY_ENTRY)
-		offset = scnprintf(buf, PAGE_SIZE,
+		offset = scnprintf(
+			buf, PAGE_SIZE,
 			"%u\t%u\t%u\t%u\t%u\t%u\t%u - %u/%u/%u - %d\n",
-			rb->nr_entries,
-			rb->mem,
-			rb->subm,
-			rb->sync,
+			rb->nr_entries, rb->mem, rb->subm, rb->sync,
 			rb->l2p_update,
 #ifdef CONFIG_NVM_DEBUG
 			atomic_read(&rb->inflight_flush_point),
 #else
 			0,
 #endif
-			rb->flush_point,
-			pblk_rb_read_count(rb),
-			pblk_rb_space(rb),
-			pblk_rb_flush_point_count(rb),
+			rb->flush_point, pblk_rb_read_count(rb),
+			pblk_rb_space(rb), pblk_rb_flush_point_count(rb),
 			queued_entries);
 	else
-		offset = scnprintf(buf, PAGE_SIZE,
+		offset = scnprintf(
+			buf, PAGE_SIZE,
 			"%u\t%u\t%u\t%u\t%u\t%u\tNULL - %u/%u/%u - %d\n",
-			rb->nr_entries,
-			rb->mem,
-			rb->subm,
-			rb->sync,
+			rb->nr_entries, rb->mem, rb->subm, rb->sync,
 			rb->l2p_update,
 #ifdef CONFIG_NVM_DEBUG
 			atomic_read(&rb->inflight_flush_point),
 #else
 			0,
 #endif
-			pblk_rb_read_count(rb),
-			pblk_rb_space(rb),
-			pblk_rb_flush_point_count(rb),
-			queued_entries);
+			pblk_rb_read_count(rb), pblk_rb_space(rb),
+			pblk_rb_flush_point_count(rb), queued_entries);
 
 	return offset;
 }

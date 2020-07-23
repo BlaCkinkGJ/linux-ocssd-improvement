@@ -25,8 +25,8 @@
  * issued.
  */
 static int pblk_read_from_cache(struct pblk *pblk, struct bio *bio,
-				sector_t lba, struct ppa_addr ppa,
-				int bio_iter, bool advanced_bio)
+				sector_t lba, struct ppa_addr ppa, int bio_iter,
+				bool advanced_bio)
 {
 #ifdef CONFIG_NVM_DEBUG
 	/* Callers must ensure that the ppa points to a cache address */
@@ -34,8 +34,8 @@ static int pblk_read_from_cache(struct pblk *pblk, struct bio *bio,
 	BUG_ON(!pblk_addr_in_cache(ppa));
 #endif
 
-	return pblk_rb_copy_to_bio(&pblk->rwb, bio, lba, ppa,
-						bio_iter, advanced_bio);
+	return pblk_rb_copy_to_bio(&pblk->rwb, bio, lba, ppa, bio_iter,
+				   advanced_bio);
 }
 
 static void pblk_read_ppalist_rq(struct pblk *pblk, struct nvm_rq *rqd,
@@ -54,13 +54,13 @@ static void pblk_read_ppalist_rq(struct pblk *pblk, struct nvm_rq *rqd,
 		struct ppa_addr p = ppas[i];
 		sector_t lba = blba + i;
 
-retry:
+	retry:
 		if (pblk_ppa_empty(p)) {
 			WARN_ON(test_and_set_bit(i, read_bitmap));
 			meta_list[i].lba = cpu_to_le64(ADDR_EMPTY);
 
 			if (unlikely(!advanced_bio)) {
-				bio_advance(bio, (i) * PBLK_EXPOSED_PAGE_SIZE);
+				bio_advance(bio, (i)*PBLK_EXPOSED_PAGE_SIZE);
 				advanced_bio = true;
 			}
 
@@ -72,7 +72,7 @@ retry:
 		 */
 		if (pblk_addr_in_cache(p)) {
 			if (!pblk_read_from_cache(pblk, bio, lba, p, i,
-								advanced_bio)) {
+						  advanced_bio)) {
 				pblk_lookup_l2p_seq(pblk, &p, lba, 1);
 				goto retry;
 			}
@@ -87,7 +87,7 @@ retry:
 			rqd->ppa_list[j++] = p;
 		}
 
-next:
+	next:
 		if (advanced_bio)
 			bio_advance(bio, PBLK_EXPOSED_PAGE_SIZE);
 	}
@@ -114,7 +114,7 @@ static int pblk_submit_read_io(struct pblk *pblk, struct nvm_rq *rqd)
 }
 
 static void pblk_read_check(struct pblk *pblk, struct nvm_rq *rqd,
-			   sector_t blba)
+			    sector_t blba)
 {
 	struct pblk_sec_meta *meta_list = rqd->meta_list;
 	int nr_lbas = rqd->nr_ppas;
@@ -287,9 +287,8 @@ static int pblk_partial_read_bio(struct pblk *pblk, struct nvm_rq *rqd,
 		src_p = kmap_atomic(src_bv.bv_page);
 		dst_p = kmap_atomic(dst_bv.bv_page);
 
-		memcpy(dst_p + dst_bv.bv_offset,
-			src_p + src_bv.bv_offset,
-			PBLK_EXPOSED_PAGE_SIZE);
+		memcpy(dst_p + dst_bv.bv_offset, src_p + src_bv.bv_offset,
+		       PBLK_EXPOSED_PAGE_SIZE);
 
 		kunmap_atomic(src_p);
 		kunmap_atomic(dst_p);
@@ -318,8 +317,8 @@ err:
 	return NVM_IO_ERR;
 }
 
-static void pblk_read_rq(struct pblk *pblk, struct nvm_rq *rqd,
-			 sector_t lba, unsigned long *read_bitmap)
+static void pblk_read_rq(struct pblk *pblk, struct nvm_rq *rqd, sector_t lba,
+			 unsigned long *read_bitmap)
 {
 	struct pblk_sec_meta *meta_list = rqd->meta_list;
 	struct bio *bio = rqd->bio;
@@ -375,7 +374,7 @@ int pblk_submit_read(struct pblk *pblk, struct bio *bio)
 	/* logic error: lba out-of-bounds. Ignore read request */
 	if (blba >= pblk->rl.nr_secs || nr_secs > PBLK_MAX_REQ_ADDRS) {
 		WARN(1, "pblk: read lba out of bounds (lba:%llu, nr:%d)\n",
-					(unsigned long long)blba, nr_secs);
+		     (unsigned long long)blba, nr_secs);
 		return NVM_IO_ERR;
 	}
 
@@ -400,8 +399,8 @@ int pblk_submit_read(struct pblk *pblk, struct bio *bio)
 	 */
 	bio_init_idx = pblk_get_bi_idx(bio);
 
-	rqd->meta_list = nvm_dev_dma_alloc(dev->parent, GFP_KERNEL,
-							&rqd->dma_meta_list);
+	rqd->meta_list =
+		nvm_dev_dma_alloc(dev->parent, GFP_KERNEL, &rqd->dma_meta_list);
 	if (!rqd->meta_list) {
 		pr_err("pblk: not able to allocate ppa list\n");
 		goto fail_rqd_free;
@@ -494,8 +493,7 @@ static int read_ppalist_rq_gc(struct pblk *pblk, struct nvm_rq *rqd,
 }
 
 static int read_rq_gc(struct pblk *pblk, struct nvm_rq *rqd,
-		      struct pblk_line *line, sector_t lba,
-		      u64 paddr_gc)
+		      struct pblk_line *line, sector_t lba, u64 paddr_gc)
 {
 	struct ppa_addr ppa_l2p, ppa_gc;
 	int valid_secs = 0;
@@ -539,8 +537,8 @@ int pblk_submit_read_gc(struct pblk *pblk, struct pblk_gc_rq *gc_rq)
 
 	memset(&rqd, 0, sizeof(struct nvm_rq));
 
-	rqd.meta_list = nvm_dev_dma_alloc(dev->parent, GFP_KERNEL,
-							&rqd.dma_meta_list);
+	rqd.meta_list =
+		nvm_dev_dma_alloc(dev->parent, GFP_KERNEL, &rqd.dma_meta_list);
 	if (!rqd.meta_list)
 		return -ENOMEM;
 
@@ -548,16 +546,16 @@ int pblk_submit_read_gc(struct pblk *pblk, struct pblk_gc_rq *gc_rq)
 		rqd.ppa_list = rqd.meta_list + pblk_dma_meta_size;
 		rqd.dma_ppa_list = rqd.dma_meta_list + pblk_dma_meta_size;
 
-		gc_rq->secs_to_gc = read_ppalist_rq_gc(pblk, &rqd, gc_rq->line,
-							gc_rq->lba_list,
-							gc_rq->paddr_list,
-							gc_rq->nr_secs);
+		gc_rq->secs_to_gc =
+			read_ppalist_rq_gc(pblk, &rqd, gc_rq->line,
+					   gc_rq->lba_list, gc_rq->paddr_list,
+					   gc_rq->nr_secs);
 		if (gc_rq->secs_to_gc == 1)
 			rqd.ppa_addr = rqd.ppa_list[0];
 	} else {
-		gc_rq->secs_to_gc = read_rq_gc(pblk, &rqd, gc_rq->line,
-							gc_rq->lba_list[0],
-							gc_rq->paddr_list[0]);
+		gc_rq->secs_to_gc =
+			read_rq_gc(pblk, &rqd, gc_rq->line, gc_rq->lba_list[0],
+				   gc_rq->paddr_list[0]);
 	}
 
 	if (!(gc_rq->secs_to_gc))
@@ -565,7 +563,7 @@ int pblk_submit_read_gc(struct pblk *pblk, struct pblk_gc_rq *gc_rq)
 
 	data_len = (gc_rq->secs_to_gc) * geo->csecs;
 	bio = pblk_bio_map_addr(pblk, gc_rq->data, gc_rq->secs_to_gc, data_len,
-						PBLK_VMALLOC_META, GFP_KERNEL);
+				PBLK_VMALLOC_META, GFP_KERNEL);
 	if (IS_ERR(bio)) {
 		pr_err("pblk: could not allocate GC bio (%lu)\n", PTR_ERR(bio));
 		goto err_free_dma;

@@ -155,8 +155,8 @@ void pblk_rl_free_lines_dec(struct pblk_rl *rl, struct pblk_line *line,
 	atomic_sub(blk_in_line, &rl->free_blocks);
 
 	if (used)
-		free_blocks = atomic_sub_return(blk_in_line,
-							&rl->free_user_blocks);
+		free_blocks =
+			atomic_sub_return(blk_in_line, &rl->free_user_blocks);
 	else
 		free_blocks = atomic_read(&rl->free_user_blocks);
 

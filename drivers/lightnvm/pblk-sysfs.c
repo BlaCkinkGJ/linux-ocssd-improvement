@@ -37,11 +37,8 @@ static ssize_t pblk_sysfs_luns_show(struct pblk *pblk, char *page)
 			up(&rlun->wr_sem);
 		}
 		sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"pblk: pos:%d, ch:%d, lun:%d - %d\n",
-					i,
-					rlun->bppa.a.ch,
-					rlun->bppa.a.lun,
-					active);
+			       "pblk: pos:%d, ch:%d, lun:%d - %d\n", i,
+			       rlun->bppa.a.ch, rlun->bppa.a.lun, active);
 	}
 
 	return sz;
@@ -64,19 +61,12 @@ static ssize_t pblk_sysfs_rate_limiter(struct pblk *pblk, char *page)
 
 	total_blocks = pblk->rl.total_blocks;
 
-	return snprintf(page, PAGE_SIZE,
+	return snprintf(
+		page, PAGE_SIZE,
 		"u:%u/%u,gc:%u/%u(%u)(stop:<%u,full:>%u,free:%d/%d/%d)-%d\n",
-				rb_user_cnt,
-				rb_user_max,
-				rb_gc_cnt,
-				rb_gc_max,
-				rb_state,
-				rb_budget,
-				pblk->rl.high,
-				free_blocks,
-				free_user_blocks,
-				total_blocks,
-				READ_ONCE(pblk->rl.rb_user_active));
+		rb_user_cnt, rb_user_max, rb_gc_cnt, rb_gc_max, rb_state,
+		rb_budget, pblk->rl.high, free_blocks, free_user_blocks,
+		total_blocks, READ_ONCE(pblk->rl.rb_user_active));
 }
 
 static ssize_t pblk_sysfs_gc_state_show(struct pblk *pblk, char *page)
@@ -85,21 +75,22 @@ static ssize_t pblk_sysfs_gc_state_show(struct pblk *pblk, char *page)
 
 	pblk_gc_sysfs_state_show(pblk, &gc_enabled, &gc_active);
 	return snprintf(page, PAGE_SIZE, "gc_enabled=%d, gc_active=%d\n",
-					gc_enabled, gc_active);
+			gc_enabled, gc_active);
 }
 
 static ssize_t pblk_sysfs_stats(struct pblk *pblk, char *page)
 {
 	ssize_t sz;
 
-	sz = snprintf(page, PAGE_SIZE,
-			"read_failed=%lu, read_high_ecc=%lu, read_empty=%lu, read_failed_gc=%lu, write_failed=%lu, erase_failed=%lu\n",
-			atomic_long_read(&pblk->read_failed),
-			atomic_long_read(&pblk->read_high_ecc),
-			atomic_long_read(&pblk->read_empty),
-			atomic_long_read(&pblk->read_failed_gc),
-			atomic_long_read(&pblk->write_failed),
-			atomic_long_read(&pblk->erase_failed));
+	sz = snprintf(
+		page, PAGE_SIZE,
+		"read_failed=%lu, read_high_ecc=%lu, read_empty=%lu, read_failed_gc=%lu, write_failed=%lu, erase_failed=%lu\n",
+		atomic_long_read(&pblk->read_failed),
+		atomic_long_read(&pblk->read_high_ecc),
+		atomic_long_read(&pblk->read_empty),
+		atomic_long_read(&pblk->read_failed_gc),
+		atomic_long_read(&pblk->write_failed),
+		atomic_long_read(&pblk->erase_failed));
 
 	return sz;
 }
@@ -119,41 +110,38 @@ static ssize_t pblk_sysfs_ppaf(struct pblk *pblk, char *page)
 		struct nvm_addrf_12 *ppaf = (struct nvm_addrf_12 *)&pblk->addrf;
 		struct nvm_addrf_12 *gppaf = (struct nvm_addrf_12 *)&geo->addrf;
 
-		sz = snprintf(page, PAGE_SIZE,
+		sz = snprintf(
+			page, PAGE_SIZE,
 			"g:(b:%d)blk:%d/%d,pg:%d/%d,lun:%d/%d,ch:%d/%d,pl:%d/%d,sec:%d/%d\n",
-			pblk->addrf_len,
-			ppaf->blk_offset, ppaf->blk_len,
-			ppaf->pg_offset, ppaf->pg_len,
-			ppaf->lun_offset, ppaf->lun_len,
-			ppaf->ch_offset, ppaf->ch_len,
-			ppaf->pln_offset, ppaf->pln_len,
-			ppaf->sec_offset, ppaf->sec_len);
+			pblk->addrf_len, ppaf->blk_offset, ppaf->blk_len,
+			ppaf->pg_offset, ppaf->pg_len, ppaf->lun_offset,
+			ppaf->lun_len, ppaf->ch_offset, ppaf->ch_len,
+			ppaf->pln_offset, ppaf->pln_len, ppaf->sec_offset,
+			ppaf->sec_len);
 
-		sz += snprintf(page + sz, PAGE_SIZE - sz,
+		sz += snprintf(
+			page + sz, PAGE_SIZE - sz,
 			"d:blk:%d/%d,pg:%d/%d,lun:%d/%d,ch:%d/%d,pl:%d/%d,sec:%d/%d\n",
-			gppaf->blk_offset, gppaf->blk_len,
-			gppaf->pg_offset, gppaf->pg_len,
-			gppaf->lun_offset, gppaf->lun_len,
-			gppaf->ch_offset, gppaf->ch_len,
-			gppaf->pln_offset, gppaf->pln_len,
-			gppaf->sec_offset, gppaf->sec_len);
+			gppaf->blk_offset, gppaf->blk_len, gppaf->pg_offset,
+			gppaf->pg_len, gppaf->lun_offset, gppaf->lun_len,
+			gppaf->ch_offset, gppaf->ch_len, gppaf->pln_offset,
+			gppaf->pln_len, gppaf->sec_offset, gppaf->sec_len);
 	} else {
 		struct nvm_addrf *ppaf = &pblk->addrf;
 		struct nvm_addrf *gppaf = &geo->addrf;
 
-		sz = snprintf(page, PAGE_SIZE,
+		sz = snprintf(
+			page, PAGE_SIZE,
 			"pblk:(s:%d)ch:%d/%d,lun:%d/%d,chk:%d/%d/sec:%d/%d\n",
-			pblk->addrf_len,
-			ppaf->ch_offset, ppaf->ch_len,
-			ppaf->lun_offset, ppaf->lun_len,
-			ppaf->chk_offset, ppaf->chk_len,
-			ppaf->sec_offset, ppaf->sec_len);
+			pblk->addrf_len, ppaf->ch_offset, ppaf->ch_len,
+			ppaf->lun_offset, ppaf->lun_len, ppaf->chk_offset,
+			ppaf->chk_len, ppaf->sec_offset, ppaf->sec_len);
 
-		sz += snprintf(page + sz, PAGE_SIZE - sz,
+		sz += snprintf(
+			page + sz, PAGE_SIZE - sz,
 			"device:ch:%d/%d,lun:%d/%d,chk:%d/%d,sec:%d/%d\n",
-			gppaf->ch_offset, gppaf->ch_len,
-			gppaf->lun_offset, gppaf->lun_len,
-			gppaf->chk_offset, gppaf->chk_len,
+			gppaf->ch_offset, gppaf->ch_len, gppaf->lun_offset,
+			gppaf->lun_len, gppaf->chk_offset, gppaf->chk_len,
 			gppaf->sec_offset, gppaf->sec_len);
 	}
 
@@ -182,17 +170,17 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 	cur_log = (l_mg->log_line) ? l_mg->log_line->id : -1;
 	nr_free_lines = l_mg->nr_free_lines;
 
-	list_for_each_entry(line, &l_mg->free_list, list)
+	list_for_each_entry (line, &l_mg->free_list, list)
 		free_line_cnt++;
 	spin_unlock(&l_mg->free_lock);
 
 	spin_lock(&l_mg->close_lock);
-	list_for_each_entry(line, &l_mg->emeta_list, list)
+	list_for_each_entry (line, &l_mg->emeta_list, list)
 		emeta_line_cnt++;
 	spin_unlock(&l_mg->close_lock);
 
 	spin_lock(&l_mg->gc_lock);
-	list_for_each_entry(line, &l_mg->gc_full_list, list) {
+	list_for_each_entry (line, &l_mg->gc_full_list, list) {
 		if (line->type == PBLK_LINETYPE_DATA)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
@@ -201,7 +189,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		gc_full++;
 	}
 
-	list_for_each_entry(line, &l_mg->gc_high_list, list) {
+	list_for_each_entry (line, &l_mg->gc_high_list, list) {
 		if (line->type == PBLK_LINETYPE_DATA)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
@@ -210,7 +198,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		gc_high++;
 	}
 
-	list_for_each_entry(line, &l_mg->gc_mid_list, list) {
+	list_for_each_entry (line, &l_mg->gc_mid_list, list) {
 		if (line->type == PBLK_LINETYPE_DATA)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
@@ -219,7 +207,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		gc_mid++;
 	}
 
-	list_for_each_entry(line, &l_mg->gc_low_list, list) {
+	list_for_each_entry (line, &l_mg->gc_low_list, list) {
 		if (line->type == PBLK_LINETYPE_DATA)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
@@ -228,7 +216,7 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		gc_low++;
 	}
 
-	list_for_each_entry(line, &l_mg->gc_empty_list, list) {
+	list_for_each_entry (line, &l_mg->gc_empty_list, list) {
 		if (line->type == PBLK_LINETYPE_DATA)
 			d_line_cnt++;
 		else if (line->type == PBLK_LINETYPE_LOG)
@@ -237,9 +225,9 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		gc_empty++;
 	}
 
-	list_for_each_entry(line, &l_mg->bad_list, list)
+	list_for_each_entry (line, &l_mg->bad_list, list)
 		bad++;
-	list_for_each_entry(line, &l_mg->corrupt_list, list)
+	list_for_each_entry (line, &l_mg->corrupt_list, list)
 		cor++;
 	spin_unlock(&l_mg->gc_lock);
 
@@ -249,41 +237,39 @@ static ssize_t pblk_sysfs_lines(struct pblk *pblk, char *page)
 		msecs = l_mg->data_line->left_msecs;
 		vsc = le32_to_cpu(*l_mg->data_line->vsc);
 		sec_in_line = l_mg->data_line->sec_in_line;
-		meta_weight = bitmap_weight(&l_mg->meta_bitmap,
-							PBLK_DATA_LINES);
+		meta_weight =
+			bitmap_weight(&l_mg->meta_bitmap, PBLK_DATA_LINES);
 		map_weight = bitmap_weight(l_mg->data_line->map_bitmap,
-							lm->sec_per_line);
+					   lm->sec_per_line);
 	}
 	spin_unlock(&l_mg->free_lock);
 
 	if (nr_free_lines != free_line_cnt)
-		pr_err("pblk: corrupted free line list:%d/%d\n",
-						nr_free_lines, free_line_cnt);
+		pr_err("pblk: corrupted free line list:%d/%d\n", nr_free_lines,
+		       free_line_cnt);
 
 	sz = snprintf(page, PAGE_SIZE - sz,
-		"line: nluns:%d, nblks:%d, nsecs:%d\n",
-		geo->all_luns, lm->blk_per_line, lm->sec_per_line);
+		      "line: nluns:%d, nblks:%d, nsecs:%d\n", geo->all_luns,
+		      lm->blk_per_line, lm->sec_per_line);
 
-	sz += snprintf(page + sz, PAGE_SIZE - sz,
+	sz += snprintf(
+		page + sz, PAGE_SIZE - sz,
 		"lines:d:%d,l:%d-f:%d,m:%d/%d,c:%d,b:%d,co:%d(d:%d,l:%d)t:%d\n",
-					cur_data, cur_log,
-					nr_free_lines,
-					emeta_line_cnt, meta_weight,
-					closed_line_cnt,
-					bad, cor,
-					d_line_cnt, l_line_cnt,
-					l_mg->nr_lines);
+		cur_data, cur_log, nr_free_lines, emeta_line_cnt, meta_weight,
+		closed_line_cnt, bad, cor, d_line_cnt, l_line_cnt,
+		l_mg->nr_lines);
 
-	sz += snprintf(page + sz, PAGE_SIZE - sz,
+	sz += snprintf(
+		page + sz, PAGE_SIZE - sz,
 		"GC: full:%d, high:%d, mid:%d, low:%d, empty:%d, queue:%d\n",
-			gc_full, gc_high, gc_mid, gc_low, gc_empty,
-			atomic_read(&pblk->gc.read_inflight_gc));
+		gc_full, gc_high, gc_mid, gc_low, gc_empty,
+		atomic_read(&pblk->gc.read_inflight_gc));
 
-	sz += snprintf(page + sz, PAGE_SIZE - sz,
+	sz += snprintf(
+		page + sz, PAGE_SIZE - sz,
 		"data (%d) cur:%d, left:%d, vsc:%d, s:%d, map:%d/%d (%d)\n",
-			cur_data, cur_sec, msecs, vsc, sec_in_line,
-			map_weight, lm->sec_per_line,
-			atomic_read(&pblk->inflight_io));
+		cur_data, cur_sec, msecs, vsc, sec_in_line, map_weight,
+		lm->sec_per_line, atomic_read(&pblk->inflight_io));
 
 	return sz;
 }
@@ -295,23 +281,18 @@ static ssize_t pblk_sysfs_lines_info(struct pblk *pblk, char *page)
 	struct pblk_line_meta *lm = &pblk->lm;
 	ssize_t sz = 0;
 
-	sz = snprintf(page, PAGE_SIZE - sz,
-				"smeta - len:%d, secs:%d\n",
-					lm->smeta_len, lm->smeta_sec);
+	sz = snprintf(page, PAGE_SIZE - sz, "smeta - len:%d, secs:%d\n",
+		      lm->smeta_len, lm->smeta_sec);
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"emeta - len:%d, sec:%d, bb_start:%d\n",
-					lm->emeta_len[0], lm->emeta_sec[0],
-					lm->emeta_bb);
+		       "emeta - len:%d, sec:%d, bb_start:%d\n",
+		       lm->emeta_len[0], lm->emeta_sec[0], lm->emeta_bb);
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"bitmap lengths: sec:%d, blk:%d, lun:%d\n",
-					lm->sec_bitmap_len,
-					lm->blk_bitmap_len,
-					lm->lun_bitmap_len);
+		       "bitmap lengths: sec:%d, blk:%d, lun:%d\n",
+		       lm->sec_bitmap_len, lm->blk_bitmap_len,
+		       lm->lun_bitmap_len);
 	sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"blk_line:%d, sec_line:%d, sec_blk:%d\n",
-					lm->blk_per_line,
-					lm->sec_per_line,
-					geo->clba);
+		       "blk_line:%d, sec_line:%d, sec_blk:%d\n",
+		       lm->blk_per_line, lm->sec_per_line, geo->clba);
 
 	return sz;
 }
@@ -321,15 +302,12 @@ static ssize_t pblk_sysfs_get_sec_per_write(struct pblk *pblk, char *page)
 	return snprintf(page, PAGE_SIZE, "%d\n", pblk->sec_per_write);
 }
 
-static ssize_t pblk_get_write_amp(u64 user, u64 gc, u64 pad,
-				  char *page)
+static ssize_t pblk_get_write_amp(u64 user, u64 gc, u64 pad, char *page)
 {
 	int sz;
 
-
-	sz = snprintf(page, PAGE_SIZE,
-			"user:%lld gc:%lld pad:%lld WA:",
-			user, gc, pad);
+	sz = snprintf(page, PAGE_SIZE, "user:%lld gc:%lld pad:%lld WA:", user,
+		      gc, pad);
 
 	if (!user) {
 		sz += snprintf(page + sz, PAGE_SIZE - sz, "NaN\n");
@@ -341,8 +319,8 @@ static ssize_t pblk_get_write_amp(u64 user, u64 gc, u64 pad,
 		wa_int = div_u64(wa_int, user);
 		wa_int = div_u64_rem(wa_int, 100000, &wa_frac);
 
-		sz += snprintf(page + sz, PAGE_SIZE - sz, "%llu.%05u\n",
-							wa_int, wa_frac);
+		sz += snprintf(page + sz, PAGE_SIZE - sz, "%llu.%05u\n", wa_int,
+			       wa_frac);
 	}
 
 	return sz;
@@ -351,8 +329,8 @@ static ssize_t pblk_get_write_amp(u64 user, u64 gc, u64 pad,
 static ssize_t pblk_sysfs_get_write_amp_mileage(struct pblk *pblk, char *page)
 {
 	return pblk_get_write_amp(atomic64_read(&pblk->user_wa),
-		atomic64_read(&pblk->gc_wa), atomic64_read(&pblk->pad_wa),
-		page);
+				  atomic64_read(&pblk->gc_wa),
+				  atomic64_read(&pblk->pad_wa), page);
 }
 
 static ssize_t pblk_sysfs_get_write_amp_trip(struct pblk *pblk, char *page)
@@ -384,8 +362,7 @@ static ssize_t pblk_sysfs_get_padding_dist(struct pblk *pblk, char *page)
 	total = atomic64_read(&pblk->nr_flush) - pblk->nr_flush_rst;
 	if (!total) {
 		for (i = 0; i < (buckets + 1); i++)
-			sz += snprintf(page + sz, PAGE_SIZE - sz,
-				"%d:0 ", i);
+			sz += snprintf(page + sz, PAGE_SIZE - sz, "%d:0 ", i);
 		sz += snprintf(page + sz, PAGE_SIZE - sz, "\n");
 
 		return sz;
@@ -395,15 +372,14 @@ static ssize_t pblk_sysfs_get_padding_dist(struct pblk *pblk, char *page)
 		total_buckets += atomic64_read(&pblk->pad_dist[i]);
 
 	sz += snprintf(page + sz, PAGE_SIZE - sz, "0:%lld%% ",
-		bucket_percentage(total - total_buckets, total));
+		       bucket_percentage(total - total_buckets, total));
 
 	for (i = 0; i < buckets; i++) {
 		unsigned long long p;
 
-		p = bucket_percentage(atomic64_read(&pblk->pad_dist[i]),
-					  total);
-		sz += snprintf(page + sz, PAGE_SIZE - sz, "%d:%lld%% ",
-				i + 1, p);
+		p = bucket_percentage(atomic64_read(&pblk->pad_dist[i]), total);
+		sz += snprintf(page + sz, PAGE_SIZE - sz, "%d:%lld%% ", i + 1,
+			       p);
 	}
 	sz += snprintf(page + sz, PAGE_SIZE - sz, "\n");
 
@@ -413,21 +389,22 @@ static ssize_t pblk_sysfs_get_padding_dist(struct pblk *pblk, char *page)
 #ifdef CONFIG_NVM_DEBUG
 static ssize_t pblk_sysfs_stats_debug(struct pblk *pblk, char *page)
 {
-	return snprintf(page, PAGE_SIZE,
+	return snprintf(
+		page, PAGE_SIZE,
 		"%lu\t%lu\t%ld\t%llu\t%ld\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\n",
-			atomic_long_read(&pblk->inflight_writes),
-			atomic_long_read(&pblk->inflight_reads),
-			atomic_long_read(&pblk->req_writes),
-			(u64)atomic64_read(&pblk->nr_flush),
-			atomic_long_read(&pblk->padded_writes),
-			atomic_long_read(&pblk->padded_wb),
-			atomic_long_read(&pblk->sub_writes),
-			atomic_long_read(&pblk->sync_writes),
-			atomic_long_read(&pblk->recov_writes),
-			atomic_long_read(&pblk->recov_gc_writes),
-			atomic_long_read(&pblk->recov_gc_reads),
-			atomic_long_read(&pblk->cache_reads),
-			atomic_long_read(&pblk->sync_reads));
+		atomic_long_read(&pblk->inflight_writes),
+		atomic_long_read(&pblk->inflight_reads),
+		atomic_long_read(&pblk->req_writes),
+		(u64)atomic64_read(&pblk->nr_flush),
+		atomic_long_read(&pblk->padded_writes),
+		atomic_long_read(&pblk->padded_wb),
+		atomic_long_read(&pblk->sub_writes),
+		atomic_long_read(&pblk->sync_writes),
+		atomic_long_read(&pblk->recov_writes),
+		atomic_long_read(&pblk->recov_gc_writes),
+		atomic_long_read(&pblk->recov_gc_reads),
+		atomic_long_read(&pblk->cache_reads),
+		atomic_long_read(&pblk->sync_reads));
 }
 #endif
 
@@ -449,8 +426,8 @@ static ssize_t pblk_sysfs_gc_force(struct pblk *pblk, const char *page,
 	return len;
 }
 
-static ssize_t pblk_sysfs_set_sec_per_write(struct pblk *pblk,
-					     const char *page, size_t len)
+static ssize_t pblk_sysfs_set_sec_per_write(struct pblk *pblk, const char *page,
+					    size_t len)
 {
 	size_t c_len;
 	int sec_per_write;
@@ -462,9 +439,9 @@ static ssize_t pblk_sysfs_set_sec_per_write(struct pblk *pblk,
 	if (kstrtouint(page, 0, &sec_per_write))
 		return -EINVAL;
 
-	if (sec_per_write < pblk->min_write_pgs
-				|| sec_per_write > pblk->max_write_pgs
-				|| sec_per_write % pblk->min_write_pgs != 0)
+	if (sec_per_write < pblk->min_write_pgs ||
+	    sec_per_write > pblk->max_write_pgs ||
+	    sec_per_write % pblk->min_write_pgs != 0)
 		return -EINVAL;
 
 	pblk_set_sec_per_write(pblk, sec_per_write);
@@ -473,7 +450,7 @@ static ssize_t pblk_sysfs_set_sec_per_write(struct pblk *pblk,
 }
 
 static ssize_t pblk_sysfs_set_write_amp_trip(struct pblk *pblk,
-			const char *page, size_t len)
+					     const char *page, size_t len)
 {
 	size_t c_len;
 	int reset_value;
@@ -485,7 +462,7 @@ static ssize_t pblk_sysfs_set_write_amp_trip(struct pblk *pblk,
 	if (kstrtouint(page, 0, &reset_value))
 		return -EINVAL;
 
-	if (reset_value !=  0)
+	if (reset_value != 0)
 		return -EINVAL;
 
 	pblk->user_rst_wa = atomic64_read(&pblk->user_wa);
@@ -495,9 +472,8 @@ static ssize_t pblk_sysfs_set_write_amp_trip(struct pblk *pblk,
 	return len;
 }
 
-
-static ssize_t pblk_sysfs_set_padding_dist(struct pblk *pblk,
-			const char *page, size_t len)
+static ssize_t pblk_sysfs_set_padding_dist(struct pblk *pblk, const char *page,
+					   size_t len)
 {
 	size_t c_len;
 	int reset_value;
@@ -511,7 +487,7 @@ static ssize_t pblk_sysfs_set_padding_dist(struct pblk *pblk,
 	if (kstrtouint(page, 0, &reset_value))
 		return -EINVAL;
 
-	if (reset_value !=  0)
+	if (reset_value != 0)
 		return -EINVAL;
 
 	for (i = 0; i < buckets; i++)
@@ -672,8 +648,8 @@ static const struct sysfs_ops pblk_sysfs_ops = {
 };
 
 static struct kobj_type pblk_ktype = {
-	.sysfs_ops	= &pblk_sysfs_ops,
-	.default_attrs	= pblk_attrs,
+	.sysfs_ops = &pblk_sysfs_ops,
+	.default_attrs = pblk_attrs,
 };
 
 int pblk_sysfs_init(struct gendisk *tdisk)
@@ -683,11 +659,10 @@ int pblk_sysfs_init(struct gendisk *tdisk)
 	int ret;
 
 	ret = kobject_init_and_add(&pblk->kobj, &pblk_ktype,
-					kobject_get(&parent_dev->kobj),
-					"%s", "pblk");
+				   kobject_get(&parent_dev->kobj), "%s",
+				   "pblk");
 	if (ret) {
-		pr_err("pblk: could not register %s/pblk\n",
-						tdisk->disk_name);
+		pr_err("pblk: could not register %s/pblk\n", tdisk->disk_name);
 		return ret;
 	}
 
